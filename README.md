@@ -34,6 +34,18 @@ A trading game on mystery charts from stocks Berkshire Hathaway owns or has owne
 | What you own decides the hole | In the same crash, one Berkshire holding fell half as far as another |
 | Time in beats timing | Miss the 3 best days and most of the gain is gone |
 
+## After every round
+
+- The stock and dates are revealed, with one money rule worked out from your trades
+- **Buy and hold check**: what you made against just holding the stock
+- **Buffett's letter**: a link to the real Berkshire shareholder letter from that year
+
+## After every run
+
+- **Your trading report**: your top 3 habits with numbers, each with a fix (dip buying, chasing, late shorts, selling after red days, fees, sitting out, leverage too big for the stock)
+- **Risk Kit**: a position-size calculator unlocked by finishing any run. Account, risk per trade, entry, stop, leverage and worst day in, position size, shares, liquidation price and worst-day loss out
+- **Copy result** and **Post on X** buttons, plus a countdown to the next daily challenge
+
 ## Bonuses
 
 - **Survivor bonus**: finish all 3 daily rounds without a margin call and get +5% on your account. Cashing out early skips it

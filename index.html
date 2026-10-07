@@ -87,6 +87,10 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
 .big{font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
 .intro-copy{display:none}
 .seg.seg2{grid-template-columns:1fr 1fr}
+.hold{font-size:13px;margin:0}.hold b{font-weight:700}
+.letter{display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--ink);background:var(--card);padding:8px 10px;text-decoration:none;color:var(--ink);box-shadow:3px 3px 0 var(--margin)}
+.letter[hidden]{display:none}.letter b{font-family:var(--stamp);font-weight:400;font-size:15px}.letter span{font-size:12.5px;color:var(--pencil);line-height:1.4}
+.stampTag.info{color:var(--ink)}
 .report ol{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:r}
 .report li{background:var(--card);border:1.5px solid var(--ink);padding:8px 10px;display:flex;flex-direction:column;gap:3px;font-size:13px;line-height:1.45}
 .report li b{font-family:var(--stamp);font-weight:400;font-size:15px}.report li b.weak{color:var(--red)}.report li b.strong{color:var(--green)}
@@ -227,6 +231,8 @@ html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
         <div class="reveal"><span class="lbl">The mystery stock was</span><b id="rvName"></b><span id="rvWhen"></span></div>
         <div class="lesson"><div class="lbl">The rule</div><h3 id="lsTitle"></h3><p id="lsText"></p></div>
         <p class="fact" id="rdFact"></p>
+        <p class="p hold" id="rdHold"></p>
+        <a class="letter" id="rdLetter" target="_blank" rel="noopener"></a>
         <div class="row"><button class="go" id="rdGo">NEXT ROUND</button><button class="ghost" id="rdCash">CASH OUT</button></div>
         <div class="bonus" id="rdBonus" hidden></div>
         <p class="p dim" id="rdNote"></p>
@@ -246,7 +252,9 @@ html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
           <div><span class="lbl">Trades</span><b id="stTrades">0</b></div><div><span class="lbl">Costs</span><b id="stFees">$0</b></div><div><span class="lbl">Drawdown</span><b id="stDD">0%</b></div></div>
         <div><div class="lbl" style="margin-bottom:6px">Rules from this run</div><ul class="rules" id="rules"></ul></div>
         <p class="p" id="subNote" hidden></p>
-        <div class="row"><a class="ghost" id="shareBtn" target="_blank" rel="noopener">Post on X</a><button class="ghost" id="againBtn" type="button">Play again</button></div>
+        <p class="p dim" id="enNext" hidden></p>
+        <div class="row"><a class="ghost" id="shareBtn" target="_blank" rel="noopener">Post on X</a><button class="ghost" id="copyBtn" type="button">Copy result</button></div>
+        <button class="ghost" id="againBtn" type="button">Play again</button>
         <div class="row"><button class="ghost" id="lbBtn2" type="button">Full leaderboard</button><button class="ghost kitOpen" id="kitBtn2" type="button">Open your Risk Kit</button></div>
         <div class="board"><div class="lbl boardLbl">Top 10 · best cash-out</div><ol data-board></ol></div>
       </div>
@@ -335,7 +343,7 @@ $('goBtn').onclick=()=>{const h=$('handle').value.trim().replace(/^@/,'');if(!/^
 function intro(){round++;state='intro';side=0;t=0;pending=null;hideCoach();seen=[R.p[0]];
   $('inLvl').textContent=mode==='daily'?`Daily #${DAILY_N} · Round ${round} of ${DAILY_R}`:`Round ${round}`;$('inName').textContent='MYSTERY STOCK #'+round;$('inSub').textContent=`A Berkshire stock · ${R.p.length} trading days · name and dates revealed after the round`;$('inHint').textContent='Tip: '+TIPS[Math.floor(Math.random()*TIPS.length)];$('lvlLbl').textContent=`Round ${round} · Mystery stock`;
   hud(R.p[0]);show('ovIntro');draw();}
-$('inGo').onclick=()=>{roundStartEq=eq;Object.assign(st,{roundTrades:0,roundFees:0,roundIn:0,roundTot:0,opens:[],warnedOT:false});state='play';show(null);last=performance.now();applyInput();};
+$('inGo').onclick=()=>{if(!ls.get('mc_tut',false)){ls.set('mc_tut',true);setTimeout(()=>coach('info','Hold BUY if you think the price rises, hold SHORT if it falls, let go to sit in cash. The dashed red line is your margin call.','The coach grades each move about 5 trading days later.'),150);}roundStartEq=eq;Object.assign(st,{roundTrades:0,roundFees:0,roundIn:0,roundTot:0,opens:[],warnedOT:false});state='play';show(null);last=performance.now();applyInput();};
 $('rdGo').onclick=()=>{if(mode==='daily'&&round>=DAILY_R){end('daily');return;}nextRound();intro();};
 $('kitBtn').onclick=()=>openKit('ovStart');$('kitBtn2').onclick=()=>openKit('ovEnd');$('kitBack').onclick=()=>{show(kitFrom);if(kitFrom==='ovStart')setTimeout(tighten,0);};
 $('rdCash').onclick=()=>end(mode==='daily'?'daily':'cash');
@@ -345,7 +353,7 @@ $('againBtn').onclick=()=>{setTimeout(tighten,0);state='menu';round=0;eq=stake;n
 /* ---------- coach ---------- */
 function ctxAt(i){const P=R.p,a=Math.max(0,i-8),mom=P[i]/P[a]-1;const rs=[];for(let k=Math.max(1,i-8);k<=i;k++)rs.push(P[k]/P[k-1]-1);
   if(!rs.length)rs.push(0);const m=rs.reduce((x,y)=>x+y,0)/rs.length,vol=Math.max(.006,Math.sqrt(rs.reduce((x,y)=>x+(y-m)**2,0)/rs.length));return{mom,vol};}
-function coach(kind,text,tip){$('coTag').className='stampTag '+kind;$('coTag').textContent={good:'GOOD CALL',bad:'BAD CALL',warn:'CAREFUL',meh:'NO EDGE'}[kind];
+function coach(kind,text,tip){$('coTag').className='stampTag '+kind;$('coTag').textContent={good:'GOOD CALL',bad:'BAD CALL',warn:'CAREFUL',meh:'NO EDGE',info:'HOW TO PLAY'}[kind];
   $('coText').textContent=text;$('coTip').innerHTML=tip?'<b>Tip:</b> '+tip:'';$('coTip').hidden=!tip;$('coach').classList.remove('off');coachT=kind==='bad'?6:4.5;}
 function hideCoach(){$('coach').classList.add('off');coachT=0;}
 function onAction(newSide,prevSide,p){const i=dayIdx(),c=ctxAt(i);
@@ -405,7 +413,9 @@ function roundEnd(){const r=eq/roundStartEq-1;st.sq.push(r>=0?'🟩':'🟥');st.
   let div=0;if(mode==='endless'&&round%3===0&&eq>0){div=eq*.03;eq+=div;}const rb=$('rdBonus');rb.hidden=!div;if(div){rb.innerHTML='';const b=document.createElement('b'),sp=document.createElement('span');b.textContent=`SURVIVAL DIVIDEND +${money(div)}`;sp.textContent=`Every 3rd round you survive pays 3% of your account. Berkshire doesn't pay dividends. This game does.`;rb.append(b,sp);}if(!st.seen.includes(R.pr))st.seen.push(R.pr);
   if(eq<feeFor(eq)*2.5){end('broke');return;}
   hideCoach();$('rdLbl').textContent=`Round ${round} result · ${R.nm}`;const el=$('rdPct');el.textContent=pct(r);el.className='big '+(r<0?'neg':'pos');
-  $('rvName').textContent=R.nm;$('rvWhen').textContent=R.d[0]+' to '+R.d[R.d.length-1]+' · '+R.name.toLowerCase();lesson();$('rdFact').textContent=R.fact?'Context: '+R.fact:'';$('rdFact').hidden=!R.fact;
+  $('rvName').textContent=R.nm;$('rvWhen').textContent=R.d[0]+' to '+R.d[R.d.length-1]+' · '+R.name.toLowerCase();{const hr=R.s.chg,yours=eq/roundStartEq-1;$('rdHold').innerHTML='';const b1=document.createElement('b');b1.textContent=`Just holding the stock: ${pct(hr)}.`;$('rdHold').append(b1,` You: ${pct(yours)}. `+(yours>hr?'You beat the tape.':'The tape beat you.'));}
+  {const L=LETTERS[R.name],a=$('rdLetter');a.hidden=!L;if(L){a.href=LB+L[1];a.textContent='';const b=document.createElement('b'),sp=document.createElement('span');b.textContent=`Read Buffett's ${L[0]} letter →`;sp.textContent=L[2];a.append(b,sp);}}
+  lesson();$('rdFact').textContent=R.fact?'Context: '+R.fact:'';$('rdFact').hidden=!R.fact;
   const tot=eq/stake-1;$('rdCash').hidden=mode==='daily'&&round>=DAILY_R;$('rdGo').textContent=mode==='daily'&&round>=DAILY_R?'FINAL RESULT':'NEXT ROUND';$('rdCash').textContent=`CASH OUT ${short$(eq)}`;$('rdNote').textContent=mode==='daily'?(round>=DAILY_R?`Account ${money(eq)}, ${pct(tot)}. That was the last round.`:`Account ${money(eq)}, ${pct(tot)}. Round ${round} of ${DAILY_R}. Cash out now to lock this result in for today, or risk it on the next chart.`):`Account ${money(eq)}, ${pct(tot)} since you started. Cash out to lock it in for the leaderboard, or risk it on another round.`;
   show('ovRound');}
 
@@ -422,7 +432,24 @@ const BADGES={SURVIVOR:'Finished all 3 daily rounds',CLEAN_SHEET:'No bad calls, 
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
 function streakNow(){const s=ls.get('mc_streak',{n:0,day:''});const y=new Date(Date.parse(DAY)-864e5).toISOString().slice(0,10);return s.day===DAY||s.day===y?s.n:0;}
 function bumpStreak(){const s=ls.get('mc_streak',{n:0,day:''});if(s.day===DAY)return s.n;const y=new Date(Date.parse(DAY)-864e5).toISOString().slice(0,10);const n=s.day===y?s.n+1:1;ls.set('mc_streak',{n,day:DAY});return n;}
-let finalEq=0,finalRet=0,how='cash',streak=0,earned=[];
+let finalEq=0,finalRet=0,how='cash',streak=0,earned=[],shareTxt='';
+const LB='https://www.berkshirehathaway.com/letters/';
+const LETTERS={'AMEX AT THE BOTTOM':[2009,'2009ltr.pdf','American Express sits in the holdings table: Berkshire owned 12.7% of it.'],
+  'APPLE, FIRST BITE':[2016,'2016ltr.pdf','Apple shows up in the holdings table, next to Coca-Cola and IBM.'],
+  'GE IN FREEFALL':[2008,'2008ltr.pdf','Buffett lists the GE deal among $14.5 billion of fixed-income buys made in the panic.'],
+  'THE SLOW BLEED':[2008,'2008ltr.pdf','The letter from the year Berkshire put $3 billion into GE.'],
+  'AAA NO MORE':[2011,'2011ltr.pdf','Written the year the US lost its AAA rating.'],
+  'OIL GOES SIDEWAYS':[2015,'2015ltr.pdf','Written the year of this oil slump.'],
+  'BIG BLUE CHOP':[2011,'2011ltr.pdf','Buffett explains the IBM buy: Berkshire owned about 5.5% of it.'],
+  'LEHMAN WEEK':[2008,'2008ltr.pdf','Buffett on the Goldman deal, struck days after Lehman failed.'],
+  'GUIDANCE DAY':[2015,'2015ltr.pdf','Walmart sits in the holdings table: a 2.0% stake.'],
+  'TARGET DROPPED':[2011,'2011ltr.pdf','The letter where Buffett explains why Berkshire bought IBM.'],
+  'COKE IN A CRASH':[1988,'1988.html','The 1988 letter, the year Berkshire made its big Coca-Cola purchase.'],
+  'EVERYDAY LOW CRASH':[2008,'2008ltr.pdf','Written during the crash you just traded.'],
+  'APPLE KEEPS CLIMBING':[2016,'2016ltr.pdf','Apple shows up in the holdings table, next to Coca-Cola and IBM.'],
+  'THE BORING YEAR':[1988,'1988.html','The 1988 letter, the year Berkshire made its big Coca-Cola purchase.'],
+  'QUIET COMPOUNDER':[2016,'2016ltr.pdf','Written the year of this quiet climb.']};
+function nextDailyIn(){const now=Date.now(),n=new Date(),mid=Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate()+1),m=Math.max(0,Math.round((mid-now)/6e4));return `${Math.floor(m/60)}h ${m%60}m`;}
 function buildReport(){const L=st.log,by=ty=>{const a=L.filter(x=>x.ty===ty);return{n:a.length,g:a.filter(x=>x.kind==='good').length,b:a.filter(x=>x.kind==='bad').length};},out=[];
   const add=(score,cls,title,stat,fix)=>out.push({score,cls,title,stat,fix});
   let d=by('dip');if(d.n>=2){if(d.b>d.g)add(d.n+2,'weak','You buy falling stocks too early',`${d.n} dip buys, ${d.g} worked, ${d.b} kept falling.`,'Wait for one up day before buying a slide, or buy half the size.');else if(d.g>=2)add(d.n,'strong','You buy fear well',`${d.g} of ${d.n} dip buys paid off.`,'Keep it, but size so another 10% drop does not end you.');}
@@ -470,7 +497,8 @@ function setShare(beat){const url=location.href.split('#')[0].split('?')[0],sgn=
   if(mode==='daily')txt=`Margin Call #${DAILY_N} ${st.sq.join('')}${streak>1?` 🔥${streak}`:''}\n${sgn} at ${lev}× · ${myTitle[0]}${beat!=null?`\nBeat ${beat}% of today's players`:''}`;
   else txt=how==='cash'?`Cashed out ${sgn} after ${round} rounds at ${lev}× trading real Berkshire stocks. Title: ${myTitle[0]}.`
     :`Margin called in round ${round} at ${lev}× trading ${R.nm} (${R.when.toLowerCase()}). Title: ${myTitle[0]}.`;
-  $('shareBtn').href='https://x.com/intent/post?text='+encodeURIComponent(txt)+'&url='+encodeURIComponent(url);}
+  shareTxt=txt+'\n'+url;$('shareBtn').href='https://x.com/intent/post?text='+encodeURIComponent(txt)+'&url='+encodeURIComponent(url);}
+$('copyBtn').onclick=async()=>{const b=$('copyBtn');try{await navigator.clipboard.writeText(shareTxt);b.textContent='Copied';}catch(e){const ta=document.createElement('textarea');ta.value=shareTxt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');b.textContent='Copied';}catch(_){b.textContent='Copy failed';}ta.remove();}setTimeout(()=>b.textContent='Copy result',1800);};
 function end(kind){how=kind;let bonus=0;if(mode==='daily'&&kind==='daily'&&round>=DAILY_R&&eq>0){bonus=eq*.05;eq+=bonus;}finalEq=kind==='liq'?0:eq;finalRet=finalEq/stake-1;state='end';hideCoach();padsOff();
   const rounds=(kind==='liq'||kind==='broke')?round-1:round;
   $('enTitle').textContent={liq:'MARGIN CALLED',broke:'ACCOUNT DRAINED',cash:'CASHED OUT',daily:`DAILY #${DAILY_N} DONE`}[kind];$('enTitle').className='h2 '+((kind==='cash'||kind==='daily')&&finalRet>=0?'pos':'neg');
@@ -492,7 +520,7 @@ function end(kind){how=kind;let bonus=0;if(mode==='daily'&&kind==='daily'&&round
   earned.forEach(k=>{const d=document.createElement('span');d.className='badge';d.textContent=k.replace(/_/g,' ');d.title=BADGES[k];if(!have.includes(k)){const n=document.createElement('i');n.textContent='NEW';d.appendChild(n);}const sm=document.createElement('small');sm.textContent=BADGES[k];d.appendChild(sm);bw.appendChild(d);});
   ls.set('mc_badges',[...new Set([...have,...earned])]);
   if(mode==='daily'&&!playedToday())streak=bumpStreak();else streak=streakNow();
-  buildReport();ls.set('mc_kit',true);kitLock();
+  buildReport();ls.set('mc_kit',true);kitLock();$('enNext').hidden=mode!=='daily';$('enNext').textContent=`Next daily challenge in ${nextDailyIn()}. Same 3 new charts for everyone.`;
   [myTitle[0],myTitle[1]]=titleFor(kind);$('ttl').textContent=myTitle[0];$('ttlTxt').textContent=myTitle[1];
   const r=$('stRet');r.textContent=pct(finalRet);r.className=finalRet<0?'neg':'pos';
   $('stRounds').textContent=rounds;$('stCalls').textContent=`${st.good}✓ ${st.bad}✗`;$('stTrades').textContent=st.trades;$('stFees').textContent=short$(st.fees);$('stDD').textContent=f1(st.dd);
