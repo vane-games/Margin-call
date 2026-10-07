@@ -85,6 +85,10 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
 .sub button:disabled{opacity:.5}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .big{font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.intro-copy{display:none}
+#ovStart.t1 .hint:not(#handleHint){display:none}#ovStart.t1 .h1{font-size:30px}
+#ovStart.t2 #handleHint,#ovStart.t2 .tagline{display:none}#ovStart.t2 .card{gap:8px}
+#ovStart.t3 .board{display:none}
 .reveal{display:flex;flex-direction:column;gap:2px;border:1.5px dashed var(--ink);padding:8px 10px}
 .reveal b{font-family:var(--stamp);font-weight:400;font-size:22px}.reveal span:last-child{font-size:13px;color:var(--pencil)}
 .fact{border-left:3px solid var(--margin);padding-left:10px;color:var(--pencil);font-size:13px;margin:0;line-height:1.45}
@@ -117,7 +121,7 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
   .coach{padding:7px 9px;top:6px;left:6px;right:6px}.coach p{font-size:11.5px}.stampTag{font-size:12px}
   .board ol{font-size:11.5px}
 }
-@media (max-height:780px){.intro-copy,#stakeHint{display:none}.tagline{display:block!important}}
+
 @media (max-height:480px){#stakeHint,#levHint{display:none}}
 </style>
 </head>
@@ -137,7 +141,7 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
     <div class="ov" id="ovStart">
       <div class="card">
         <h1 class="h1">MARGIN CALL</h1>
-        <p class="p tagline" style="display:none">Mystery charts from real Berkshire stocks. Buy, short or sit in cash. A coach grades every move. Survive the margin call, cash out to score.</p>
+        <p class="p tagline">Mystery charts from real Berkshire stocks. Buy, short or sit in cash. A coach grades every move. Survive the margin call, cash out to score.</p>
         <p class="p intro-copy">Every chart is a real stretch of a stock Berkshire Hathaway owns or has owned. You won't know which one, or when, until the round ends. Hold <b>BUY</b> or <b>SHORT</b>, let go to sit in cash. A coach grades each move. Rounds keep coming until you get margin called, or you cash out.</p>
         <div><div class="lbl" style="margin-bottom:6px">Your X handle</div>
           <div class="sub"><span>@</span><input id="handle" maxlength="15" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="handle" aria-label="Your X handle"></div>
@@ -230,7 +234,9 @@ function nextRound(){if(!bag.length){bag=EP.slice().sort(()=>Math.random()-.5);i
 nextRound();
 
 let W=0,Hh=0;
-function fit(){const r=chart.getBoundingClientRect(),d=window.devicePixelRatio||1;W=r.width;Hh=r.height;cv.width=Math.round(W*d);cv.height=Math.round(Hh*d);ctx.setTransform(d,0,0,d,0,0);draw();}
+function tighten(){const o=$('ovStart');if(o.hidden)return;o.classList.remove('t1','t2','t3');const b=$('goBtn');
+  for(const c of ['t1','t2','t3']){if(b.getBoundingClientRect().bottom<=o.getBoundingClientRect().bottom-8)break;o.classList.add(c);}}
+function fit(){const r=chart.getBoundingClientRect(),d=window.devicePixelRatio||1;W=r.width;Hh=r.height;cv.width=Math.round(W*d);cv.height=Math.round(Hh*d);ctx.setTransform(d,0,0,d,0,0);draw();tighten();}
 addEventListener('resize',fit);
 
 const fresh=()=>({trades:0,fees:0,roundTrades:0,roundFees:0,peak:0,dd:0,roundIn:0,roundTot:0,good:0,bad:0,opens:[],warnedOT:false,seen:[]});
@@ -261,7 +267,7 @@ function intro(){round++;state='intro';side=0;t=0;pending=null;hideCoach();seen=
 $('inGo').onclick=()=>{roundStartEq=eq;Object.assign(st,{roundTrades:0,roundFees:0,roundIn:0,roundTot:0,opens:[],warnedOT:false});state='play';show(null);last=performance.now();applyInput();};
 $('rdGo').onclick=()=>{nextRound();intro();};
 $('rdCash').onclick=()=>end('cash');
-$('againBtn').onclick=()=>{state='menu';round=0;eq=stake;nextRound();hud(R.p[0]);$('lvlLbl').textContent='Berkshire stocks';show('ovStart');loadBoard();};
+$('againBtn').onclick=()=>{setTimeout(tighten,0);state='menu';round=0;eq=stake;nextRound();hud(R.p[0]);$('lvlLbl').textContent='Berkshire stocks';show('ovStart');loadBoard();};
 
 /* ---------- coach ---------- */
 function ctxAt(i){const P=R.p,a=Math.max(0,i-8),mom=P[i]/P[a]-1;const rs=[];for(let k=Math.max(1,i-8);k<=i;k++)rs.push(P[k]/P[k-1]-1);
