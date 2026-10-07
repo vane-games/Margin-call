@@ -86,6 +86,10 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .big{font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
 .intro-copy{display:none}
+.seg.seg2{grid-template-columns:1fr 1fr}
+.row:has(#rdCash[hidden]){grid-template-columns:1fr}
+.titleBox{border:3px solid var(--ink);padding:8px 12px;transform:rotate(-1deg);display:flex;flex-direction:column;gap:3px;background:var(--card)}
+.titleBox b{font-family:var(--stamp);font-weight:400;font-size:24px;color:var(--red)}.titleBox p{margin:0;font-size:13px;line-height:1.4}
 #ovStart.t1 .hint:not(#handleHint){display:none}#ovStart.t1 .h1{font-size:30px}
 #ovStart.t2 #handleHint,#ovStart.t2 .tagline{display:none}#ovStart.t2 .card{gap:8px}
 #ovStart.t3 .board{display:none}
@@ -119,7 +123,7 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
   .reveal{padding:5px 8px}.reveal b{font-size:17px}.fact{font-size:11.5px}
   .stats b{font-size:15px}.stats div{padding:4px 6px}.rules{font-size:11.5px}
   .coach{padding:7px 9px;top:6px;left:6px;right:6px}.coach p{font-size:11.5px}.stampTag{font-size:12px}
-  .board ol{font-size:11.5px}
+  .board ol{font-size:11.5px}.titleBox b{font-size:17px}.titleBox p{font-size:11.5px}
 }
 
 @media (max-height:480px){#stakeHint,#levHint{display:none}}
@@ -146,14 +150,28 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
         <div><div class="lbl" style="margin-bottom:6px">Your X handle</div>
           <div class="sub"><span>@</span><input id="handle" maxlength="15" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="handle" aria-label="Your X handle"></div>
           <div class="hint" id="handleHint">Your cash-out goes on the leaderboard under this name.</div></div>
-        <div><div class="lbl" style="margin-bottom:6px">Your account</div>
+        <div><div class="lbl" style="margin-bottom:6px">Mode</div>
+          <div class="seg seg2" id="segMode"><button data-v="1" aria-pressed="true" id="modeDaily">DAILY</button><button data-v="0">ENDLESS</button></div>
+          <div class="hint" id="modeHint"></div></div>
+        <div id="stakeWrap" hidden><div class="lbl" style="margin-bottom:6px">Your account</div>
           <div class="seg" id="segStake"><button data-v="100">$100</button><button data-v="1000" aria-pressed="true">$1K</button><button data-v="10000">$10K</button><button data-v="100000">$100K</button></div>
           <div class="hint" id="stakeHint"></div></div>
         <div><div class="lbl" style="margin-bottom:6px">Your leverage</div>
           <div class="seg" id="segLev"><button data-v="2">2×</button><button data-v="5">5×</button><button data-v="10" aria-pressed="true">10×</button><button data-v="25">25×</button></div>
           <div class="hint" id="levHint"></div></div>
         <button class="go" id="goBtn">OPEN THE BOOKS</button>
-        <div class="board"><div class="lbl">Top 10 · best cash-out</div><ol data-board></ol></div>
+        <button class="ghost" id="lbBtn" type="button">View leaderboard</button>
+        <div class="board"><div class="lbl boardLbl">Top 10 · best cash-out</div><ol data-board></ol></div>
+      </div>
+    </div>
+
+    <div class="ov" id="ovBoard" hidden>
+      <div class="card">
+        <h2 class="h2" id="bdTitle">LEADERBOARD</h2>
+        <div class="seg seg2" id="segBoard"><button data-v="1" aria-pressed="true">TODAY</button><button data-v="0">ALL-TIME</button></div>
+        <p class="p dim" id="bdSub"></p>
+        <div class="board"><ol id="fullBoard"></ol></div>
+        <div class="row"><button class="ghost" id="lbRefresh" type="button">Refresh</button><button class="go" id="lbBack" type="button">BACK</button></div>
       </div>
     </div>
 
@@ -184,12 +202,14 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
         <h2 class="h2" id="enTitle">BOOKS CLOSED</h2>
         <div class="big" id="enEq">$0</div>
         <p class="p" id="enText"></p>
+        <div class="titleBox"><span class="lbl">Your title</span><b id="ttl"></b><p id="ttlTxt"></p></div>
         <div class="stats"><div><span class="lbl">Return</span><b id="stRet">0%</b></div><div><span class="lbl">Rounds</span><b id="stRounds">0</b></div><div><span class="lbl">Calls</span><b id="stCalls">0✓ 0✗</b></div>
           <div><span class="lbl">Trades</span><b id="stTrades">0</b></div><div><span class="lbl">Costs</span><b id="stFees">$0</b></div><div><span class="lbl">Drawdown</span><b id="stDD">0%</b></div></div>
         <div><div class="lbl" style="margin-bottom:6px">Rules from this run</div><ul class="rules" id="rules"></ul></div>
         <p class="p" id="subNote" hidden></p>
         <div class="row"><a class="ghost" id="shareBtn" target="_blank" rel="noopener">Post on X</a><button class="ghost" id="againBtn" type="button">Play again</button></div>
-        <div class="board"><div class="lbl">Top 10 · best cash-out</div><ol data-board></ol></div>
+        <button class="ghost" id="lbBtn2" type="button">Full leaderboard</button>
+        <div class="board"><div class="lbl boardLbl">Top 10 · best cash-out</div><ol data-board></ol></div>
       </div>
     </div>
   </div>
@@ -222,24 +242,30 @@ function statsOf(d,p,cp){const rets=[];for(let i=1;i<p.length;i++)rets.push([d[i
   let ex=1;rets.map(r=>r[1]).sort((a,b)=>b-a).slice(3).forEach(r=>ex*=1+r);let l3=1;rets.forEach(r=>l3*=1+3*r[1]);
   const s={chg:p[p.length-1]/p[0]-1,mdd,worst:w[1],worstDate:w[0],tolow:lo/p[0]-1,lowDate:d[li],fromlow:p[p.length-1]/lo-1,ex3:ex-1,lev3:l3-1};
   if(cp){let k=cp[0],m=0;cp.forEach(x=>{k=Math.max(k,x);m=Math.max(m,1-x/k);});s.cmpMdd=m;}return s;}
-function makeRound(ep){const N=ep.p.length,L=Math.min(LEN,N);let a0=0,a1=N-L;const k=ep.key?ep.d.indexOf(ep.key):-1;
+function makeRound(ep,rnd=Math.random){const N=ep.p.length,L=Math.min(LEN,N);let a0=0,a1=N-L;const k=ep.key?ep.d.indexOf(ep.key):-1;
   if(k>=0){a0=Math.max(0,k-L+8);a1=Math.min(N-L,k-8);if(a1<a0){a0=a1=Math.max(0,Math.min(N-L,k-Math.floor(L/2)));}}
-  const a=a0+Math.floor(Math.random()*(a1-a0+1)),d=ep.d.slice(a,a+L),p=ep.p.slice(a,a+L),cp=ep.cp?ep.cp.slice(a,a+L):null;
+  const a=a0+Math.floor(rnd()*(a1-a0+1)),d=ep.d.slice(a,a+L),p=ep.p.slice(a,a+L),cp=ep.cp?ep.cp.slice(a,a+L):null;
   const y0=d[0].slice(0,4),y1=d[L-1].slice(0,4),m0=MON[+d[0].slice(5,7)-1],m1=MON[+d[L-1].slice(5,7)-1];
   const when=y0===y1?(m0===m1?`${m0} ${y0}`:`${m0}–${m1} ${y0}`):`${m0} ${y0}–${m1} ${y1}`;
   return {...ep,d,p,s:statsOf(d,p,cp),sub:`${ep.nm.toUpperCase()} · ${when}`,when};}
+const DAY=new Date().toISOString().slice(0,10),DAILY_N=Math.max(1,Math.floor((Date.parse(DAY)-Date.parse('2026-10-07'))/864e5)+1),DAILY_R=3;
+function rngFrom(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}
+  return()=>{h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);h^=h>>>16;return(h>>>0)/4294967296;};}
+let mode='daily',dailyEps=[];
+function buildDaily(){const r=rngFrom('mc-'+DAY);const keys=Object.keys(PR).map(k=>[k,r()]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]).slice(0,DAILY_R);
+  dailyEps=keys.map(k=>{const c=EP.filter(e=>e.pr===k);return makeRound(c[Math.floor(r()*c.length)],r);});}
 let bag=[],lastEp=null,R=null;
-function nextRound(){if(!bag.length){bag=EP.slice().sort(()=>Math.random()-.5);if(bag[bag.length-1]===lastEp)bag.unshift(bag.pop());}
+function nextRound(){if(mode==='daily'){R=dailyEps[round];return;}if(!bag.length){bag=EP.slice().sort(()=>Math.random()-.5);if(bag[bag.length-1]===lastEp)bag.unshift(bag.pop());}
   lastEp=bag.pop();R=makeRound(lastEp);}
-nextRound();
+buildDaily();R=dailyEps[0];
 
 let W=0,Hh=0;
-function tighten(){const o=$('ovStart');if(o.hidden)return;o.classList.remove('t1','t2','t3');const b=$('goBtn');
+function tighten(){const o=$('ovStart');if(o.hidden)return;o.classList.remove('t1','t2','t3');const b=$('lbBtn');
   for(const c of ['t1','t2','t3']){if(b.getBoundingClientRect().bottom<=o.getBoundingClientRect().bottom-8)break;o.classList.add(c);}}
 function fit(){const r=chart.getBoundingClientRect(),d=window.devicePixelRatio||1;W=r.width;Hh=r.height;cv.width=Math.round(W*d);cv.height=Math.round(Hh*d);ctx.setTransform(d,0,0,d,0,0);draw();tighten();}
 addEventListener('resize',fit);
 
-const fresh=()=>({trades:0,fees:0,roundTrades:0,roundFees:0,peak:0,dd:0,roundIn:0,roundTot:0,good:0,bad:0,opens:[],warnedOT:false,seen:[]});
+const fresh=()=>({sq:[],inAll:0,totAll:0,trades:0,fees:0,roundTrades:0,roundFees:0,peak:0,dd:0,roundIn:0,roundTot:0,good:0,bad:0,opens:[],warnedOT:false,seen:[]});
 let handle='',stake=1000,lev=10,eq=1000,st=fresh(),round=0,t=0,state='menu',side=0,entryP=0,entryEq=0,roundStartEq=1000,seen=[],held={s:false,l:false},lastPress=0,lo=0,hi=1,pending=null,coachT=0;
 
 const money=v=>{const a=Math.abs(v);let s;if(a>=1e9)s=(a/1e9).toFixed(2)+'B';else if(a>=1e6)s=(a/1e6).toFixed(2)+'M';else s=a.toLocaleString('en-US',{minimumFractionDigits:a<1e5?2:0,maximumFractionDigits:a<1e5?2:0});return v<0?'($'+s+')':'$'+s;};
@@ -258,15 +284,22 @@ function seg(id,cb){$(id).addEventListener('click',e=>{const b=e.target.closest(
 function hints(){$('levHint').innerHTML=`At ${lev}× a <b>${(100/lev).toFixed(1)}%</b> move against you wipes out the position. Some of these stocks fell more than 13% in one day.`;
   const fee=feeFor(stake);$('stakeHint').innerHTML=`Each trade costs $1 plus 0.05% of the position: <b>${money(fee)}</b>, or ${(fee/stake*100).toFixed(2)}% of this account. Fixed fees hurt small accounts most.`;
   $('levTxt').textContent=`${lev}× · ${short$(stake)}`;}
+function playedToday(){try{return !!localStorage.getItem('mc_daily_'+DAY);}catch(e){return false;}}
+function setMode(m){mode=m;$('stakeWrap').hidden=m==='daily';if(m==='daily'){stake=1000;eq=1000;[...$('segStake').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.v==='1000'));}
+  $('modeDaily').textContent='DAILY #'+DAILY_N;
+  $('modeHint').textContent=m==='daily'?(playedToday()?"You've played today. Replays are practice and don't count.":'Everyone gets the same 3 charts today, with $1K. Only your first run counts.'):'Random charts until you get margin called. Cash out to score.';
+  hints();hud(R.p[0]);loadBoard();setTimeout(tighten,0);}
+seg('segMode',v=>setMode(v?'daily':'endless'));
 seg('segStake',v=>{stake=v;eq=v;hints();hud(R.p[0]);});seg('segLev',v=>{lev=v;hints();});
-function show(id){['ovStart','ovIntro','ovRound','ovEnd'].forEach(o=>$(o).hidden=o!==id);}
-$('goBtn').onclick=()=>{const h=$('handle').value.trim().replace(/^@/,'');if(!/^[A-Za-z0-9_]{1,15}$/.test(h)){$('handleHint').innerHTML='<b>Enter your X handle to play:</b> letters, numbers and _ only, up to 15.';$('handle').focus();return;}handle=h;try{localStorage.setItem('mc_handle',h);}catch(e){}eq=stake;round=0;st=fresh();st.peak=stake;$('tCalls').textContent='0✓ 0✗';nextRound();intro();};
+function show(id){['ovStart','ovIntro','ovRound','ovEnd','ovBoard'].forEach(o=>$(o).hidden=o!==id);}
+$('goBtn').onclick=()=>{const h=$('handle').value.trim().replace(/^@/,'');if(!/^[A-Za-z0-9_]{1,15}$/.test(h)){$('handleHint').innerHTML='<b>Enter your X handle to play:</b> letters, numbers and _ only, up to 15.';$('handle').focus();return;}handle=h;try{localStorage.setItem('mc_handle',h);}catch(e){}if(mode==='daily'){stake=1000;buildDaily();}eq=stake;round=0;st=fresh();st.peak=stake;$('tCalls').textContent='0✓ 0✗';nextRound();intro();};
 function intro(){round++;state='intro';side=0;t=0;pending=null;hideCoach();seen=[R.p[0]];
-  $('inLvl').textContent=`Round ${round}`;$('inName').textContent='MYSTERY STOCK #'+round;$('inSub').textContent=`A Berkshire stock · ${R.p.length} trading days · name and dates revealed after the round`;$('inHint').textContent='Tip: '+TIPS[Math.floor(Math.random()*TIPS.length)];$('lvlLbl').textContent=`Round ${round} · Mystery stock`;
+  $('inLvl').textContent=mode==='daily'?`Daily #${DAILY_N} · Round ${round} of ${DAILY_R}`:`Round ${round}`;$('inName').textContent='MYSTERY STOCK #'+round;$('inSub').textContent=`A Berkshire stock · ${R.p.length} trading days · name and dates revealed after the round`;$('inHint').textContent='Tip: '+TIPS[Math.floor(Math.random()*TIPS.length)];$('lvlLbl').textContent=`Round ${round} · Mystery stock`;
   hud(R.p[0]);show('ovIntro');draw();}
 $('inGo').onclick=()=>{roundStartEq=eq;Object.assign(st,{roundTrades:0,roundFees:0,roundIn:0,roundTot:0,opens:[],warnedOT:false});state='play';show(null);last=performance.now();applyInput();};
-$('rdGo').onclick=()=>{nextRound();intro();};
+$('rdGo').onclick=()=>{if(mode==='daily'&&round>=DAILY_R){end('daily');return;}nextRound();intro();};
 $('rdCash').onclick=()=>end('cash');
+$('lbBtn').onclick=()=>openBoard('ovStart');$('lbBtn2').onclick=()=>openBoard('ovEnd');$('lbRefresh').onclick=loadFull;$('lbBack').onclick=()=>{show(boardFrom);if(boardFrom==='ovStart')setTimeout(tighten,0);};
 $('againBtn').onclick=()=>{setTimeout(tighten,0);state='menu';round=0;eq=stake;nextRound();hud(R.p[0]);$('lvlLbl').textContent='Berkshire stocks';show('ovStart');loadBoard();};
 
 /* ---------- coach ---------- */
@@ -319,20 +352,20 @@ let last=performance.now();
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   if(coachT>0){coachT-=dt;if(coachT<=0)hideCoach();}
   if(state==='play'){
-    t+=dt;const P=R.p,p=priceAt(t),e=Math.max(0,curEq(p));st.peak=Math.max(st.peak,e);st.dd=Math.max(st.dd,1-e/st.peak);st.roundTot+=dt;if(side)st.roundIn+=dt;
+    t+=dt;const P=R.p,p=priceAt(t),e=Math.max(0,curEq(p));st.peak=Math.max(st.peak,e);st.dd=Math.max(st.dd,1-e/st.peak);st.roundTot+=dt;st.totAll+=dt;if(side){st.roundIn+=dt;st.inAll+=dt;}
     const di=dayIdx();while(seen.length<=di)seen.push(P[seen.length]);
     if(pending&&di>=pending.i0+H)grade();
-    if(side&&curEq(p)<=0){eq=0;side=0;state='dead';padsOff();pending=null;
+    if(side&&curEq(p)<=0){eq=0;side=0;state='dead';st.sq.push('⬛');padsOff();pending=null;
       coach('bad',`Margin call. The stock moved ${f1(1/lev)} against you and the broker closed you out.`,'Leverage decides how wrong you can be, and for how long. Lower it next run.');hud(p);setTimeout(()=>end('liq'),1700);}
     else if(t>=ROUND_SEC){if(pending)grade();close(P[P.length-1]);state='round';padsOff();hud(P[P.length-1]);setTimeout(roundEnd,700);}
     else hud(p);}
   draw();requestAnimationFrame(frame);}
 
-function roundEnd(){const r=eq/roundStartEq-1;if(!st.seen.includes(R.pr))st.seen.push(R.pr);
+function roundEnd(){const r=eq/roundStartEq-1;st.sq.push(r>=0?'🟩':'🟥');if(!st.seen.includes(R.pr))st.seen.push(R.pr);
   if(eq<feeFor(eq)*2.5){end('broke');return;}
   hideCoach();$('rdLbl').textContent=`Round ${round} result · ${R.nm}`;const el=$('rdPct');el.textContent=pct(r);el.className='big '+(r<0?'neg':'pos');
   $('rvName').textContent=R.nm;$('rvWhen').textContent=R.d[0]+' to '+R.d[R.d.length-1]+' · '+R.name.toLowerCase();lesson();$('rdFact').textContent=R.fact?'Context: '+R.fact:'';$('rdFact').hidden=!R.fact;
-  const tot=eq/stake-1;$('rdCash').textContent=`CASH OUT ${short$(eq)}`;$('rdNote').textContent=`Account ${money(eq)}, ${pct(tot)} since you started. Cash out to lock it in for the leaderboard, or risk it on another round.`;
+  const tot=eq/stake-1;$('rdCash').hidden=mode==='daily';$('rdGo').textContent=mode==='daily'&&round>=DAILY_R?'FINAL RESULT':'NEXT ROUND';$('rdCash').textContent=`CASH OUT ${short$(eq)}`;$('rdNote').textContent=mode==='daily'?`Account ${money(eq)}, ${pct(tot)}. Round ${round} of ${DAILY_R}.`:`Account ${money(eq)}, ${pct(tot)} since you started. Cash out to lock it in for the leaderboard, or risk it on another round.`;
   show('ovRound');}
 
 function lesson(){const S=R.s,sg=v=>(v>=0?'+':'−')+f1(v),n=R.nm,w=R.when.toLowerCase();let X;
@@ -344,34 +377,73 @@ function lesson(){const S=R.s,sg=v=>(v>=0?'+':'−')+f1(v),n=R.nm,w=R.when.toLow
   else X=`${n} ended ${sg(S.chg)} over these ${R.p.length} days. Without its 3 best days it would have ended ${sg(S.ex3)}. The best days often land right next to the worst ones, so stepping out to feel safe can cost you the recovery. You were in the market ${Math.round(st.roundIn/Math.max(.01,st.roundTot)*100)}% of this round.`;
   $('lsTitle').textContent=PR[R.pr].t;$('lsText').textContent=X;}
 
-let finalEq=0,finalRet=0,how='cash';
+let finalEq=0,finalRet=0,how='cash';const myTitle=['',''];
+function titleFor(kind){const tim=st.totAll?st.inAll/st.totAll:0,rp=Math.max(1,round),tpr=st.trades/rp;
+  if(kind==='liq')return lev>=10?['LEVERAGE JUNKIE',`The pick didn't kill you, the ${lev}× did. The same trades at 2× would still be alive.`]:['WIPED OUT','One move went too far against you. Smaller size buys you time to be right.'];
+  if(kind==='broke')return['DEATH BY FEES',`${st.trades} trades cost ${money(st.fees)}. Small accounts can't afford to trade often.`];
+  if(tpr>=6)return['OVERTRADER',`${st.trades} trades in ${rp} round${rp===1?'':'s'} cost you ${money(st.fees)}. Most of them bought nothing.`];
+  if(tim<.2)return['CASH HOARDER',`You sat in cash ${Math.round((1-tim)*100)}% of the time. Safe, but the market paid the people who stayed in.`];
+  if(finalRet>0&&st.good>=2*Math.max(1,st.bad))return['ORACLE OF OMAHA','Most of your calls were right and you kept the gains.'];
+  if(finalRet>0)return['STEADY COMPOUNDER','You made money without blowing up. That is most of the game.'];
+  if(st.dd>.3)return['BAGHOLDER',`You sat through a ${f1(st.dd)} drawdown. Cutting a loser early keeps you in the game.`];
+  return['PAPER HANDS','Lots of small losses on small moves. Fewer, better trades.'];}
+function setShare(beat){const url=location.href.split('#')[0].split('?')[0],sgn=(finalRet>=0?'+':'−')+f1(finalRet);let txt;
+  if(mode==='daily')txt=`Margin Call #${DAILY_N} ${st.sq.join('')}\n${sgn} at ${lev}× · ${myTitle[0]}${beat!=null?`\nBeat ${beat}% of today's players`:''}`;
+  else txt=how==='cash'?`Cashed out ${sgn} after ${round} rounds at ${lev}× trading real Berkshire stocks. Title: ${myTitle[0]}.`
+    :`Margin called in round ${round} at ${lev}× trading ${R.nm} (${R.when.toLowerCase()}). Title: ${myTitle[0]}.`;
+  $('shareBtn').href='https://x.com/intent/post?text='+encodeURIComponent(txt)+'&url='+encodeURIComponent(url);}
 function end(kind){how=kind;finalEq=kind==='liq'?0:eq;finalRet=finalEq/stake-1;state='end';hideCoach();padsOff();
-  const rounds=kind==='cash'?round:round-1;
-  $('enTitle').textContent={liq:'MARGIN CALLED',broke:'ACCOUNT DRAINED',cash:'CASHED OUT'}[kind];$('enTitle').className='h2 '+(kind==='cash'&&finalRet>=0?'pos':'neg');
+  const rounds=(kind==='liq'||kind==='broke')?round-1:round;
+  $('enTitle').textContent={liq:'MARGIN CALLED',broke:'ACCOUNT DRAINED',cash:'CASHED OUT',daily:`DAILY #${DAILY_N} DONE`}[kind];$('enTitle').className='h2 '+((kind==='cash'||kind==='daily')&&finalRet>=0?'pos':'neg');
   $('enEq').textContent=money(finalEq);
   $('enText').textContent=kind==='liq'?`Closed out in round ${round} trading ${R.nm} (${R.when.toLowerCase()}). At ${lev}× a ${(100/lev).toFixed(1)}% move against you is the whole position. Cash out earlier to keep a score.`
     :kind==='broke'?`Your account fell too low to pay the trading fee after ${round} rounds. Fees and losses did it together.`
+    :kind==='daily'?`Same 3 charts as everyone today. ${short$(stake)} at ${lev}× became ${money(finalEq)}.`
     :`You walked away after ${round} round${round===1?'':'s'} with ${money(finalEq)} from ${short$(stake)}. Knowing when to stop is part of the game.`;
+  [myTitle[0],myTitle[1]]=titleFor(kind);$('ttl').textContent=myTitle[0];$('ttlTxt').textContent=myTitle[1];
   const r=$('stRet');r.textContent=pct(finalRet);r.className=finalRet<0?'neg':'pos';
   $('stRounds').textContent=rounds;$('stCalls').textContent=`${st.good}✓ ${st.bad}✗`;$('stTrades').textContent=st.trades;$('stFees').textContent=short$(st.fees);$('stDD').textContent=f1(st.dd);
   if(!st.seen.includes(R.pr))st.seen.push(R.pr);
   const ul=$('rules');ul.textContent='';st.seen.forEach(k=>{const li=document.createElement('li'),b=document.createElement('strong'),T=PR[k].t;b.textContent=T.charAt(0)+T.slice(1).toLowerCase()+'. ';li.append(b,PR[k].short);ul.appendChild(li);});
-  $('subNote').hidden=true;if(kind==='cash')saveScore();
-  const url=location.href.split('#')[0];
-  const txt=kind==='cash'?`Cashed out ${pct(finalRet).replace(/[()]/g,'')} after ${round} rounds at ${lev}× trading real Berkshire stocks. ${st.good} good calls, ${st.bad} bad.`
-    :`Margin called in round ${round} at ${lev}× trading ${R.nm} (${R.when.toLowerCase()}). Real Berkshire stocks, real prices, no undo.`;
-  $('shareBtn').href='https://x.com/intent/post?text='+encodeURIComponent(txt)+'&url='+encodeURIComponent(url);
+  $('subNote').hidden=true;if(mode==='daily'){const first=!playedToday();try{localStorage.setItem('mc_daily_'+DAY,'1');}catch(e){}saveDaily(first);}else if(kind==='cash')saveScore();
+  setShare(null);
   show('ovEnd');loadBoard();}
 
 /* ---------- leaderboard (Supabase REST) ---------- */
 const C=window.GAME_CONFIG,dbOn=!!(C.SUPABASE_URL&&C.SUPABASE_ANON_KEY&&!C.SUPABASE_URL.startsWith('__'));
 const hdr=()=>C.SUPABASE_ANON_KEY.startsWith('eyJ')?{apikey:C.SUPABASE_ANON_KEY,Authorization:'Bearer '+C.SUPABASE_ANON_KEY}:{apikey:C.SUPABASE_ANON_KEY};
-function renderBoard(rows,msg){document.querySelectorAll('[data-board]').forEach(ol=>{ol.textContent='';
-  if(msg||!rows.length){const li=document.createElement('li');li.className='empty';li.textContent=msg||'No cash-outs yet. Be first.';ol.appendChild(li);return;}
-  rows.forEach((r,i)=>{const li=document.createElement('li');[String(i+1),'@'+r.name,pct(+r.ret),`${r.rounds}r · ${r.lev}×`].forEach((v,j)=>{const s=document.createElement('span');s.textContent=v;s.className=['','nm',+r.ret<0?'neg':'pos','l'][j];li.appendChild(s);});if(handle&&r.name.toLowerCase()===handle.toLowerCase())li.style.fontWeight='700';ol.appendChild(li);});});}
-async function loadBoard(){if(!dbOn){renderBoard([],'Leaderboard goes live once the game is hosted.');return;}
-  try{const r=await fetch(`${C.SUPABASE_URL}/rest/v1/scores?select=name,ret,rounds,lev&order=ret.desc,created_at.asc&limit=10`,{headers:hdr()});
-    if(!r.ok)throw 0;renderBoard(await r.json());}catch(e){renderBoard([],'Leaderboard is not responding. Try again later.');}}
+function fillList(ol,rows,msg){ol.textContent='';
+  if(msg||!rows.length){const li=document.createElement('li');li.className='empty';li.textContent=msg||'No runs yet. Be first.';ol.appendChild(li);return;}
+  rows.forEach((r,i)=>{const li=document.createElement('li');[String(i+1),'@'+r.name,pct(+r.ret),r.rounds!=null?`${r.rounds}r · ${r.lev}×`:`${r.good}✓${r.bad}✗ · ${r.lev}×`].forEach((v,j)=>{const s=document.createElement('span');s.textContent=v;s.className=['','nm',+r.ret<0?'neg':'pos','l'][j];li.appendChild(s);});
+    if(handle&&r.name.toLowerCase()===handle.toLowerCase())li.style.fontWeight='700';ol.appendChild(li);});}
+function renderBoard(rows,msg){document.querySelectorAll('[data-board]').forEach(ol=>fillList(ol,rows,msg));}
+let boardMode='daily';
+const qDaily=n=>`${C.SUPABASE_URL}/rest/v1/daily_scores?select=name,ret,lev,good,bad&day=eq.${DAY}&order=ret.desc,created_at.asc&limit=${n}`;
+const qAll=n=>`${C.SUPABASE_URL}/rest/v1/scores?select=name,ret,rounds,lev&order=ret.desc,created_at.asc&limit=${n}`;
+async function loadFull(){const ol=$('fullBoard'),d=boardMode==='daily';
+  $('bdTitle').textContent=d?`DAILY #${DAILY_N}`:'ALL-TIME';$('bdSub').textContent=d?"Today's 3 charts, same for everyone. First run counts.":"Best cash-outs in endless mode. Margin-called runs don't count.";
+  if(!dbOn){fillList(ol,[],'Leaderboard goes live once the game is hosted.');return;}
+  fillList(ol,[],'Loading…');
+  try{const r=await fetch(d?qDaily(50):qAll(50),{headers:hdr()});if(!r.ok)throw 0;fillList(ol,await r.json());}catch(e){fillList(ol,[],'Leaderboard is not responding. Try again later.');}}
+seg('segBoard',v=>{boardMode=v?'daily':'all';loadFull();});
+let boardFrom='ovStart';
+function openBoard(from){boardFrom=from;boardMode=mode==='daily'?'daily':'all';[...$('segBoard').children].forEach(x=>x.setAttribute('aria-pressed',(x.dataset.v==='1')===(boardMode==='daily')));if(!handle){try{handle=($('handle').value||'').trim().replace(/^@/,'');}catch(e){}}show('ovBoard');loadFull();}
+async function loadBoard(){const d=mode==='daily';document.querySelectorAll('.boardLbl').forEach(x=>x.textContent=d?`Top 10 · Daily #${DAILY_N}`:'Top 10 · best cash-out');
+  if(!dbOn){renderBoard([],'Leaderboard goes live once the game is hosted.');return;}
+  try{const r=await fetch(d?qDaily(10):qAll(10),{headers:hdr()});if(!r.ok)throw 0;renderBoard(await r.json());}catch(e){renderBoard([],'Leaderboard is not responding. Try again later.');}}
+async function saveDaily(first){const note=$('subNote');note.hidden=false;
+  if(!dbOn){note.textContent='Daily board is offline here.';return;}
+  note.textContent=`Saving as @${handle}…`;
+  try{let dup=!first;
+    if(first){const r=await fetch(`${C.SUPABASE_URL}/rest/v1/daily_scores`,{method:'POST',headers:{...hdr(),'Content-Type':'application/json',Prefer:'return=minimal'},
+        body:JSON.stringify({day:DAY,name:handle,ret:+finalRet.toFixed(6),lev,good:st.good,bad:st.bad})});
+      if(!r.ok){if(r.status===409)dup=true;else throw 0;}}
+    const cnt=async q=>{const x=await fetch(`${C.SUPABASE_URL}/rest/v1/daily_scores?select=id&day=eq.${DAY}${q}`,{headers:{...hdr(),Prefer:'count=exact',Range:'0-0'}});return +((x.headers.get('content-range')||'').split('/')[1]||0);};
+    const total=await cnt(''),below=await cnt(`&ret=lt.${finalRet.toFixed(6)}`),others=dup?total:total-1,beat=others>0?Math.round(below/others*100):null;
+    note.textContent=dup?(beat!=null?`Practice run, only your first run today counts. This one would beat ${beat}% of today's players.`:'Practice run, only your first run today counts.')
+      :(beat!=null?`Saved as @${handle}. You beat ${beat}% of today's ${total} players.`:`Saved as @${handle}. You're the first player today.`);
+    setShare(dup?null:beat);loadBoard();}
+  catch(err){note.textContent='Could not save this run. Check your connection.';}}
 async function saveScore(){const note=$('subNote');note.hidden=false;
   if(!dbOn){note.textContent=`Leaderboard is offline here. Once hosted, this run saves automatically as @${handle}.`;return;}
   note.textContent=`Saving as @${handle}…`;
@@ -426,7 +498,7 @@ function draw(){if(!W)return;const P=R.p,N=P.length,padL=34,padR=62,padT=18,padB
 }
 
 try{$('handle').value=localStorage.getItem('mc_handle')||'';}catch(e){}
-fit();hints();hud(R.p[0]);seen=[R.p[0]];loadBoard();requestAnimationFrame(frame);
+fit();setMode('daily');hud(R.p[0]);seen=[R.p[0]];loadBoard();requestAnimationFrame(frame);
 if(document.fonts)document.fonts.ready.then(fit);
 })();
 </script>
