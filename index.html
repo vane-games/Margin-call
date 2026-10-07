@@ -87,6 +87,16 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
 .big{font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
 .intro-copy{display:none}
 .seg.seg2{grid-template-columns:1fr 1fr}
+.report ol{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:r}
+.report li{background:var(--card);border:1.5px solid var(--ink);padding:8px 10px;display:flex;flex-direction:column;gap:3px;font-size:13px;line-height:1.45}
+.report li b{font-family:var(--stamp);font-weight:400;font-size:15px}.report li b.weak{color:var(--red)}.report li b.strong{color:var(--green)}
+.report li em{font-style:normal;color:var(--pencil)}.report li em strong{color:var(--ink)}
+.kit{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kit label{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--pencil);min-width:0}
+.kit input{font:inherit;font-size:16px;font-weight:700;letter-spacing:0;text-transform:none;padding:7px 8px;border:1.5px solid var(--ink);background:var(--card);color:var(--ink);border-radius:0;width:100%;min-width:0}
+.kitOut{border:2px solid var(--ink);background:var(--card);padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:13.5px;font-variant-numeric:tabular-nums}
+.kitOut b{text-align:right}.kitOut .warn{grid-column:1/-1;color:var(--red);font-weight:700;line-height:1.4;margin-top:4px}.kitOut .ok{grid-column:1/-1;color:var(--green);font-weight:700;line-height:1.4;margin-top:4px}
+#kitBtn.locked{opacity:.55}
 .bonus{border:2.5px dashed var(--green);background:var(--card);padding:8px 10px;display:flex;flex-direction:column;gap:2px;transform:rotate(-1deg)}
 .bonus b{font-family:var(--stamp);font-weight:400;font-size:18px;color:var(--green)}.bonus span{font-size:12.5px;color:var(--pencil);line-height:1.4}
 .badges{display:flex;flex-wrap:wrap;gap:8px}
@@ -167,7 +177,7 @@ html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
           <div class="seg" id="segLev"><button data-v="2">2×</button><button data-v="5">5×</button><button data-v="10" aria-pressed="true">10×</button><button data-v="25">25×</button></div>
           <div class="hint" id="levHint"></div></div>
         <button class="go" id="goBtn">OPEN THE BOOKS</button>
-        <button class="ghost" id="lbBtn" type="button">View leaderboard</button>
+        <div class="row"><button class="ghost" id="lbBtn" type="button">Leaderboard</button><button class="ghost" id="kitBtn" type="button">Risk Kit 🔒</button></div>
         <div class="board"><div class="lbl boardLbl">Top 10 · best cash-out</div><ol data-board></ol></div>
       </div>
     </div>
@@ -179,6 +189,24 @@ html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
         <p class="p dim" id="bdSub"></p>
         <div class="board"><ol id="fullBoard"></ol></div>
         <div class="row"><button class="ghost" id="lbRefresh" type="button">Refresh</button><button class="go" id="lbBack" type="button">BACK</button></div>
+      </div>
+    </div>
+
+    <div class="ov" id="ovKit" hidden>
+      <div class="card">
+        <h2 class="h2">RISK KIT</h2>
+        <p class="p dim">Work out a position before you take it. Unlocked by finishing a run. A calculator, not advice.</p>
+        <div class="seg seg2" id="kitSide"><button data-v="1" aria-pressed="true">LONG</button><button data-v="-1">SHORT</button></div>
+        <div class="kit">
+          <label for="kAcct">Account $<input id="kAcct" type="number" inputmode="decimal" value="1000" min="1"></label>
+          <label for="kRisk">Risk per trade %<input id="kRisk" type="number" inputmode="decimal" value="1" min="0.1" step="0.1"></label>
+          <label for="kEntry">Entry price<input id="kEntry" type="number" inputmode="decimal" value="100" min="0.01" step="0.01"></label>
+          <label for="kStop">Stop price<input id="kStop" type="number" inputmode="decimal" value="95" min="0.01" step="0.01"></label>
+          <label for="kLev">Max leverage ×<input id="kLev" type="number" inputmode="decimal" value="2" min="1" step="1"></label>
+          <label for="kWorst">Worst day %<input id="kWorst" type="number" inputmode="decimal" value="10" min="0.1" step="0.5"></label>
+        </div>
+        <div class="kitOut" id="kitOut"></div>
+        <button class="go" id="kitBack" type="button">BACK</button>
       </div>
     </div>
 
@@ -212,13 +240,14 @@ html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
         <p class="p" id="enText"></p>
         <div class="bonus" id="enBonus" hidden></div>
         <div class="titleBox"><span class="lbl">Your title</span><b id="ttl"></b><p id="ttlTxt"></p></div>
+        <div class="report"><div class="lbl">Your trading report</div><ol id="reportList"></ol></div>
         <div id="badgeWrap" hidden><div class="lbl" style="margin-bottom:6px">Stamps earned</div><div class="badges" id="badges"></div></div>
         <div class="stats"><div><span class="lbl">Return</span><b id="stRet">0%</b></div><div><span class="lbl">Rounds</span><b id="stRounds">0</b></div><div><span class="lbl">Calls</span><b id="stCalls">0✓ 0✗</b></div>
           <div><span class="lbl">Trades</span><b id="stTrades">0</b></div><div><span class="lbl">Costs</span><b id="stFees">$0</b></div><div><span class="lbl">Drawdown</span><b id="stDD">0%</b></div></div>
         <div><div class="lbl" style="margin-bottom:6px">Rules from this run</div><ul class="rules" id="rules"></ul></div>
         <p class="p" id="subNote" hidden></p>
         <div class="row"><a class="ghost" id="shareBtn" target="_blank" rel="noopener">Post on X</a><button class="ghost" id="againBtn" type="button">Play again</button></div>
-        <button class="ghost" id="lbBtn2" type="button">Full leaderboard</button>
+        <div class="row"><button class="ghost" id="lbBtn2" type="button">Full leaderboard</button><button class="ghost kitOpen" id="kitBtn2" type="button">Open your Risk Kit</button></div>
         <div class="board"><div class="lbl boardLbl">Top 10 · best cash-out</div><ol data-board></ol></div>
       </div>
     </div>
@@ -275,7 +304,7 @@ function tighten(){const o=$('ovStart');if(o.hidden)return;o.classList.remove('t
 function fit(){const r=chart.getBoundingClientRect(),d=window.devicePixelRatio||1;W=r.width;Hh=r.height;cv.width=Math.round(W*d);cv.height=Math.round(Hh*d);ctx.setTransform(d,0,0,d,0,0);draw();tighten();}
 addEventListener('resize',fit);
 
-const fresh=()=>({sq:[],inAll:0,totAll:0,trades:0,fees:0,roundTrades:0,roundFees:0,peak:0,dd:0,roundIn:0,roundTot:0,good:0,bad:0,opens:[],warnedOT:false,seen:[]});
+const fresh=()=>({log:[],warns:0,holds:[],openT:0,sq:[],inAll:0,totAll:0,trades:0,fees:0,roundTrades:0,roundFees:0,peak:0,dd:0,roundIn:0,roundTot:0,good:0,bad:0,opens:[],warnedOT:false,seen:[]});
 let handle='',stake=1000,lev=10,eq=1000,st=fresh(),round=0,t=0,state='menu',side=0,entryP=0,entryEq=0,roundStartEq=1000,seen=[],held={s:false,l:false},lastPress=0,lo=0,hi=1,pending=null,coachT=0;
 
 const money=v=>{const a=Math.abs(v);let s;if(a>=1e9)s=(a/1e9).toFixed(2)+'B';else if(a>=1e6)s=(a/1e6).toFixed(2)+'M';else s=a.toLocaleString('en-US',{minimumFractionDigits:a<1e5?2:0,maximumFractionDigits:a<1e5?2:0});return v<0?'($'+s+')':'$'+s;};
@@ -301,13 +330,14 @@ function setMode(m){mode=m;$('stakeWrap').hidden=m==='daily';if(m==='daily'){sta
   hints();hud(R.p[0]);loadBoard();setTimeout(tighten,0);}
 seg('segMode',v=>setMode(v?'daily':'endless'));
 seg('segStake',v=>{stake=v;eq=v;hints();hud(R.p[0]);});seg('segLev',v=>{lev=v;hints();});
-function show(id){['ovStart','ovIntro','ovRound','ovEnd','ovBoard'].forEach(o=>$(o).hidden=o!==id);}
+function show(id){['ovStart','ovIntro','ovRound','ovEnd','ovBoard','ovKit'].forEach(o=>$(o).hidden=o!==id);}
 $('goBtn').onclick=()=>{const h=$('handle').value.trim().replace(/^@/,'');if(!/^[A-Za-z0-9_]{1,15}$/.test(h)){$('handleHint').innerHTML='<b>Enter your X handle to play:</b> letters, numbers and _ only, up to 15.';$('handle').focus();return;}handle=h;try{localStorage.setItem('mc_handle',h);}catch(e){}if(mode==='daily'){stake=1000;buildDaily();}eq=stake;round=0;st=fresh();st.peak=stake;$('tCalls').textContent='0✓ 0✗';nextRound();intro();};
 function intro(){round++;state='intro';side=0;t=0;pending=null;hideCoach();seen=[R.p[0]];
   $('inLvl').textContent=mode==='daily'?`Daily #${DAILY_N} · Round ${round} of ${DAILY_R}`:`Round ${round}`;$('inName').textContent='MYSTERY STOCK #'+round;$('inSub').textContent=`A Berkshire stock · ${R.p.length} trading days · name and dates revealed after the round`;$('inHint').textContent='Tip: '+TIPS[Math.floor(Math.random()*TIPS.length)];$('lvlLbl').textContent=`Round ${round} · Mystery stock`;
   hud(R.p[0]);show('ovIntro');draw();}
 $('inGo').onclick=()=>{roundStartEq=eq;Object.assign(st,{roundTrades:0,roundFees:0,roundIn:0,roundTot:0,opens:[],warnedOT:false});state='play';show(null);last=performance.now();applyInput();};
 $('rdGo').onclick=()=>{if(mode==='daily'&&round>=DAILY_R){end('daily');return;}nextRound();intro();};
+$('kitBtn').onclick=()=>openKit('ovStart');$('kitBtn2').onclick=()=>openKit('ovEnd');$('kitBack').onclick=()=>{show(kitFrom);if(kitFrom==='ovStart')setTimeout(tighten,0);};
 $('rdCash').onclick=()=>end(mode==='daily'?'daily':'cash');
 $('lbBtn').onclick=()=>openBoard('ovStart');$('lbBtn2').onclick=()=>openBoard('ovEnd');$('lbRefresh').onclick=loadFull;$('lbBack').onclick=()=>{show(boardFrom);if(boardFrom==='ovStart')setTimeout(tighten,0);};
 $('againBtn').onclick=()=>{setTimeout(tighten,0);state='menu';round=0;eq=stake;nextRound();hud(R.p[0]);$('lvlLbl').textContent='Berkshire stocks';show('ovStart');loadBoard();};
@@ -320,7 +350,7 @@ function coach(kind,text,tip){$('coTag').className='stampTag '+kind;$('coTag').t
 function hideCoach(){$('coach').classList.add('off');coachT=0;}
 function onAction(newSide,prevSide,p){const i=dayIdx(),c=ctxAt(i);
   if(newSide){const room=1/lev,days=Math.max(1,Math.round(room/c.vol));
-    if(room<3*c.vol)coach('warn',`The stock has been moving about ${f1(c.vol)} a day. At ${lev}× your margin call is only ${f1(room)} away, about ${days} normal day${days===1?'':'s'}.`,'Use less leverage when the stock is jumpy. Survive first, profit second.');
+    if(room<3*c.vol){st.warns++;}if(room<3*c.vol)coach('warn',`The stock has been moving about ${f1(c.vol)} a day. At ${lev}× your margin call is only ${f1(room)} away, about ${days} normal day${days===1?'':'s'}.`,'Use less leverage when the stock is jumpy. Survive first, profit second.');
     st.opens.push(t);const recent=st.opens.filter(x=>t-x<3).length;
     if(recent>=4&&!st.warnedOT){st.warnedOT=true;coach('warn',`${recent} trades in a few days. You've paid ${money(st.roundFees)} in costs this round already.`,'Every switch pays the fee. Trade less, think more.');}}
   if(newSide===0&&prevSide===0)return;
@@ -340,14 +370,14 @@ function grade(){const g=pending;pending=null;const r=priceAt(t)/g.p0-1,n='the s
     if(wb<-TH){kind='good';txt=`You stepped out and ${n} moved ${pct(r)} against your old ${g.prevSide===1?'long':'short'}. Cash is a position too.`;}
     else if(wb>TH){kind='bad';txt=`You got out and ${n} moved ${pct(r)} your way right after.`;tip=g.prevSide===1?'The best days often come right after the worst. Selling in fear usually sells near the bottom.':'Closing a working short too early leaves money on the table.';}
     else{kind='meh';txt=`You went to cash and ${n} moved ${pct(r)}. Fine either way.`;}}
-  txt=txt.replace(/(^|\. )([a-z])/g,(m,x,y)=>x+y.toUpperCase());if(kind==='good')st.good++;if(kind==='bad')st.bad++;coach(kind,txt,tip);$('tCalls').textContent=`${st.good}✓ ${st.bad}✗`;}
+  txt=txt.replace(/(^|\. )([a-z])/g,(m,x,y)=>x+y.toUpperCase());{const ty=g.newSide===1?(m<-.03?'dip':m>.03?'chase':'long'):g.newSide===-1?(m<-.03?'lateshort':m>.03?'fade':'short'):(g.prevSide===1?(m<0?'fearexit':'exitlong'):'cover');st.log.push({ty,kind,r});}if(kind==='good')st.good++;if(kind==='bad')st.bad++;coach(kind,txt,tip);$('tCalls').textContent=`${st.good}✓ ${st.bad}✗`;}
 
 /* ---------- trading ---------- */
 function open(s,p){if(side===s)return;const prev=side;close(p);
   if(s){const fee=feeFor(eq);if(fee>=eq*.5){coach('warn','Your account is too small to pay the trading fee.','Fixed costs eat small accounts.');onAction(0,prev,p);return;}
-    eq-=fee;st.fees+=fee;st.roundFees+=fee;st.trades++;st.roundTrades++;side=s;entryP=p;entryEq=eq;}
+    eq-=fee;st.fees+=fee;st.roundFees+=fee;st.trades++;st.roundTrades++;side=s;entryP=p;entryEq=eq;st.openT=t;}
   onAction(s,prev,p);}
-function close(p){if(!side)return;eq=curEq(p);side=0;}
+function close(p){if(!side)return;eq=curEq(p);side=0;st.holds.push((t-st.openT)/dd_());}
 function applyInput(){if(state!=='play')return;const p=priceAt(t);let want=0;
   if(held.s&&held.l)want=lastPress;else if(held.s)want=-1;else if(held.l)want=1;open(want,p);
   $('padS').classList.toggle('on',side===-1);$('padL').classList.toggle('on',side===1);hud(p);}
@@ -392,7 +422,41 @@ const BADGES={SURVIVOR:'Finished all 3 daily rounds',CLEAN_SHEET:'No bad calls, 
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
 function streakNow(){const s=ls.get('mc_streak',{n:0,day:''});const y=new Date(Date.parse(DAY)-864e5).toISOString().slice(0,10);return s.day===DAY||s.day===y?s.n:0;}
 function bumpStreak(){const s=ls.get('mc_streak',{n:0,day:''});if(s.day===DAY)return s.n;const y=new Date(Date.parse(DAY)-864e5).toISOString().slice(0,10);const n=s.day===y?s.n+1:1;ls.set('mc_streak',{n,day:DAY});return n;}
-let finalEq=0,finalRet=0,how='cash',streak=0,earned=[];const myTitle=['',''];
+let finalEq=0,finalRet=0,how='cash',streak=0,earned=[];
+function buildReport(){const L=st.log,by=ty=>{const a=L.filter(x=>x.ty===ty);return{n:a.length,g:a.filter(x=>x.kind==='good').length,b:a.filter(x=>x.kind==='bad').length};},out=[];
+  const add=(score,cls,title,stat,fix)=>out.push({score,cls,title,stat,fix});
+  let d=by('dip');if(d.n>=2){if(d.b>d.g)add(d.n+2,'weak','You buy falling stocks too early',`${d.n} dip buys, ${d.g} worked, ${d.b} kept falling.`,'Wait for one up day before buying a slide, or buy half the size.');else if(d.g>=2)add(d.n,'strong','You buy fear well',`${d.g} of ${d.n} dip buys paid off.`,'Keep it, but size so another 10% drop does not end you.');}
+  d=by('chase');if(d.n>=2&&d.b>=d.g)add(d.n+1,'weak','You chase run-ups',`${d.n} buys after a fast rise, ${d.b} gave it back.`,'After a sharp rise, wait for a pullback before you buy.');
+  d=by('lateshort');if(d.n>=2&&d.b>=d.g)add(d.n+1,'weak','You short after the drop is done',`${d.n} shorts after a slide, ${d.b} got squeezed by the bounce.`,'Short a failed bounce, not the crash day.');
+  d=by('fearexit');if(d.n>=2&&d.b>=1)add(d.n+2,'weak','You sell after red days',`${d.n} exits after a drop, the stock rose right after ${d.b} of them.`,'Decide your exit before you enter, not after a bad day.');
+  const fp=st.fees/stake;if(fp>.02)add(fp*100,'weak','Costs are eating you',`${st.trades} trades cost ${(fp*100).toFixed(1)}% of your account.`,'Only trade when you would take the same bet twice.');
+  const tim=st.totAll?st.inAll/st.totAll:0;if(st.totAll>8&&tim<.25)add(4,'weak','You sit out too much',`You were in cash ${Math.round((1-tim)*100)}% of the time.`,'Sitting out is a bet too. Hold a small position instead of none.');
+  if(st.warns>=2)add(st.warns+2,'weak','Your leverage is too big for the stock',`${st.warns} times the margin call was under 3 normal days away.`,'Keep the margin call at least 3 normal daily moves away. Use the Risk Kit.');
+  const hv=st.holds.length?st.holds.reduce((a,b)=>a+b,0)/st.holds.length:0;if(st.holds.length>=4&&hv<3)add(3,'weak','You hold for a day or two',`Average hold: ${hv.toFixed(1)} days across ${st.holds.length} trades.`,'Short holds mean you pay fees for noise. Give a trade a reason and time.');
+  if(st.good>=3&&st.good>=2*Math.max(1,st.bad))add(st.good,'strong','Your reads are good',`${st.good} good calls against ${st.bad} bad.`,'Your edge is real. Protect it with smaller leverage.');
+  out.sort((a,b)=>(a.cls==='weak'?0:1)-(b.cls==='weak'?0:1)||b.score-a.score);
+  const ol=$('reportList');ol.textContent='';const top=out.slice(0,3);
+  if(!top.length){const li=document.createElement('li');li.textContent='Not enough trades to read your habits yet. Play a few more rounds and trade a little more.';ol.appendChild(li);return;}
+  top.forEach(x=>{const li=document.createElement('li'),b=document.createElement('b'),sp=document.createElement('span'),em=document.createElement('em'),st_=document.createElement('strong');b.className=x.cls;b.textContent=x.title;sp.textContent=x.stat;st_.textContent='Fix: ';if(x.cls==='strong')st_.textContent='Keep: ';em.append(st_,x.fix);li.append(b,sp,em);ol.appendChild(li);});}
+const kitOn=()=>ls.get('mc_kit',false);
+function kitLock(){const b=$('kitBtn');b.classList.toggle('locked',!kitOn());b.textContent=kitOn()?'Risk Kit':'Risk Kit 🔒';}
+let kitSide=1;
+function kitCalc(){const v=id=>parseFloat($(id).value)||0,A=v('kAcct'),R=v('kRisk')/100,E=v('kEntry'),S=v('kStop'),L=Math.max(1,v('kLev')),Wd=v('kWorst')/100,o=$('kitOut');o.textContent='';
+  const row=(k,val)=>{const a=document.createElement('span'),b=document.createElement('b');a.textContent=k;b.textContent=val;o.append(a,b);},note=(cls,t)=>{const d=document.createElement('div');d.className=cls;d.textContent=t;o.appendChild(d);};
+  if(!(A>0&&R>0&&E>0&&S>0)){note('warn','Fill in account, risk, entry and stop.');return;}
+  const dist=kitSide===1?(E-S)/E:(S-E)/E;if(dist<=0){note('warn',kitSide===1?'For a long, the stop goes below the entry.':'For a short, the stop goes above the entry.');return;}
+  const riskAmt=A*R,pos=riskAmt/dist,need=pos/A,usePos=Math.min(pos,A*L),shares=usePos/E,liq=kitSide===1?E*(1-1/Math.max(need,1e-9)):E*(1+1/Math.max(need,1e-9)),levUsed=usePos/A,liqUsed=levUsed>1?(kitSide===1?E*(1-1/levUsed):E*(1+1/levUsed)):null,worstLoss=usePos*Wd;
+  row('Max loss if stopped',money(Math.min(riskAmt,usePos*dist)));row('Stop distance',(dist*100).toFixed(2)+'%');row('Position size',money(usePos));row('Shares',shares>=10?Math.floor(shares).toLocaleString('en-US'):shares.toFixed(3));row('Leverage used',levUsed.toFixed(2)+'×');
+  row('Liquidation price',liqUsed?'$'+liqUsed.toFixed(2):'none (no leverage)');row('Worst-day loss',money(worstLoss)+' · '+(worstLoss/A*100).toFixed(1)+'%');
+  if(need>L)note('warn',`To risk ${(R*100).toFixed(1)}% with this stop you'd need ${need.toFixed(1)}×. Capped at ${L}×, so you risk less. The kit sizes you smaller instead.`);
+  if(liqUsed&&((kitSide===1&&liqUsed>=S)||(kitSide===-1&&liqUsed<=S)))note('warn','Your liquidation price comes before your stop. The broker closes you first. Use less leverage.');
+  else if(worstLoss/A>.2)note('warn',`One worst day would cost ${(worstLoss/A*100).toFixed(0)}% of the account. Size down until that is under 20%.`);
+  else note('ok','Sized so one stopped trade or one bad day does not end you.');}
+['kAcct','kRisk','kEntry','kStop','kLev','kWorst'].forEach(id=>$(id).addEventListener('input',kitCalc));
+seg('kitSide',v=>{kitSide=v;kitCalc();});
+let kitFrom='ovStart';
+function openKit(from){if(!kitOn()){$('modeHint').textContent='Finish any run (cash out, all 3 daily rounds, or even a margin call) to unlock the Risk Kit.';return;}kitFrom=from;
+  $('kAcct').value=stake;$('kLev').value=Math.min(lev,5);show('ovKit');kitCalc();}const myTitle=['',''];
 function titleFor(kind){const tim=st.totAll?st.inAll/st.totAll:0,rp=Math.max(1,round),tpr=st.trades/rp;
   if(kind==='liq')return lev>=10?['LEVERAGE JUNKIE',`The pick didn't kill you, the ${lev}× did. The same trades at 2× would still be alive.`]:['WIPED OUT','One move went too far against you. Smaller size buys you time to be right.'];
   if(kind==='broke')return['DEATH BY FEES',`${st.trades} trades cost ${money(st.fees)}. Small accounts can't afford to trade often.`];
@@ -428,6 +492,7 @@ function end(kind){how=kind;let bonus=0;if(mode==='daily'&&kind==='daily'&&round
   earned.forEach(k=>{const d=document.createElement('span');d.className='badge';d.textContent=k.replace(/_/g,' ');d.title=BADGES[k];if(!have.includes(k)){const n=document.createElement('i');n.textContent='NEW';d.appendChild(n);}const sm=document.createElement('small');sm.textContent=BADGES[k];d.appendChild(sm);bw.appendChild(d);});
   ls.set('mc_badges',[...new Set([...have,...earned])]);
   if(mode==='daily'&&!playedToday())streak=bumpStreak();else streak=streakNow();
+  buildReport();ls.set('mc_kit',true);kitLock();
   [myTitle[0],myTitle[1]]=titleFor(kind);$('ttl').textContent=myTitle[0];$('ttlTxt').textContent=myTitle[1];
   const r=$('stRet');r.textContent=pct(finalRet);r.className=finalRet<0?'neg':'pos';
   $('stRounds').textContent=rounds;$('stCalls').textContent=`${st.good}✓ ${st.bad}✗`;$('stTrades').textContent=st.trades;$('stFees').textContent=short$(st.fees);$('stDD').textContent=f1(st.dd);
@@ -528,7 +593,7 @@ function draw(){if(!W)return;const P=R.p,N=P.length,padL=34,padR=62,padT=18,padB
 try{$('handle').value=localStorage.getItem('mc_handle')||'';}catch(e){}
 try{if(/iPhone|iPod/.test(navigator.userAgent)&&window.top===window)document.documentElement.classList.add('ios-full');}catch(e){}
 $('handle').addEventListener('blur',()=>{setTimeout(()=>{window.scrollTo(0,0);fit();},50);});
-fit();setMode('daily');hud(R.p[0]);seen=[R.p[0]];loadBoard();requestAnimationFrame(frame);
+fit();kitLock();setMode('daily');hud(R.p[0]);seen=[R.p[0]];loadBoard();requestAnimationFrame(frame);
 if(document.fonts)document.fonts.ready.then(fit);
 })();
 </script>
