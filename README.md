@@ -34,6 +34,13 @@ A trading game on mystery charts from stocks Berkshire Hathaway owns or has owne
 | What you own decides the hole | In the same crash, one Berkshire holding fell half as far as another |
 | Time in beats timing | Miss the 3 best days and most of the gain is gone |
 
+## Bonuses
+
+- **Survivor bonus**: finish all 3 daily rounds without a margin call and get +5% on your account. Cashing out early skips it
+- **Survival dividend**: in endless mode every 3rd round you survive pays 3%. Berkshire doesn't pay dividends. This game does
+- **Stamps**: Survivor, Clean Sheet, Iron Hands, Patient Capital, Beat the Tape. New ones are marked NEW
+- **Daily streak**: play the daily challenge on consecutive days and your share line shows 🔥 and the streak count
+
 ## End-of-run titles
 
 Oracle of Omaha, Steady Compounder, Bagholder, Paper Hands, Overtrader, Cash Hoarder, Leverage Junkie, Wiped Out, Death by Fees.

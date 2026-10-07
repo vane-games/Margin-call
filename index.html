@@ -87,6 +87,12 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
 .big{font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
 .intro-copy{display:none}
 .seg.seg2{grid-template-columns:1fr 1fr}
+.bonus{border:2.5px dashed var(--green);background:var(--card);padding:8px 10px;display:flex;flex-direction:column;gap:2px;transform:rotate(-1deg)}
+.bonus b{font-family:var(--stamp);font-weight:400;font-size:18px;color:var(--green)}.bonus span{font-size:12.5px;color:var(--pencil);line-height:1.4}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{font-family:var(--stamp);font-size:13px;letter-spacing:.04em;border:2.5px solid;padding:3px 8px;color:var(--ink);transform:rotate(-2deg);display:inline-flex;flex-wrap:wrap;gap:2px 6px;align-items:center;max-width:100%}.badge small{flex-basis:100%;font-weight:700}
+.badge:nth-child(even){transform:rotate(1.5deg)}.badge i{font-style:normal;font-family:var(--type);font-weight:700;font-size:10px;background:var(--green);color:var(--card);padding:0 4px}
+.badge small{font-family:var(--type);font-size:10px;font-weight:700;color:var(--pencil)}
 html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .row:has(#rdCash[hidden]){grid-template-columns:1fr}
 .titleBox{border:3px solid var(--ink);padding:8px 12px;transform:rotate(-1deg);display:flex;flex-direction:column;gap:3px;background:var(--card)}
@@ -194,6 +200,7 @@ html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
         <div class="lesson"><div class="lbl">The rule</div><h3 id="lsTitle"></h3><p id="lsText"></p></div>
         <p class="fact" id="rdFact"></p>
         <div class="row"><button class="go" id="rdGo">NEXT ROUND</button><button class="ghost" id="rdCash">CASH OUT</button></div>
+        <div class="bonus" id="rdBonus" hidden></div>
         <p class="p dim" id="rdNote"></p>
       </div>
     </div>
@@ -203,7 +210,9 @@ html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
         <h2 class="h2" id="enTitle">BOOKS CLOSED</h2>
         <div class="big" id="enEq">$0</div>
         <p class="p" id="enText"></p>
+        <div class="bonus" id="enBonus" hidden></div>
         <div class="titleBox"><span class="lbl">Your title</span><b id="ttl"></b><p id="ttlTxt"></p></div>
+        <div id="badgeWrap" hidden><div class="lbl" style="margin-bottom:6px">Stamps earned</div><div class="badges" id="badges"></div></div>
         <div class="stats"><div><span class="lbl">Return</span><b id="stRet">0%</b></div><div><span class="lbl">Rounds</span><b id="stRounds">0</b></div><div><span class="lbl">Calls</span><b id="stCalls">0✓ 0✗</b></div>
           <div><span class="lbl">Trades</span><b id="stTrades">0</b></div><div><span class="lbl">Costs</span><b id="stFees">$0</b></div><div><span class="lbl">Drawdown</span><b id="stDD">0%</b></div></div>
         <div><div class="lbl" style="margin-bottom:6px">Rules from this run</div><ul class="rules" id="rules"></ul></div>
@@ -288,7 +297,7 @@ function hints(){$('levHint').innerHTML=`At ${lev}× a <b>${(100/lev).toFixed(1)
 function playedToday(){try{return !!localStorage.getItem('mc_daily_'+DAY);}catch(e){return false;}}
 function setMode(m){mode=m;$('stakeWrap').hidden=m==='daily';if(m==='daily'){stake=1000;eq=1000;[...$('segStake').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.v==='1000'));}
   $('modeDaily').textContent='DAILY #'+DAILY_N;
-  $('modeHint').textContent=m==='daily'?(playedToday()?"You've played today. Replays are practice and don't count.":'Everyone gets the same 3 charts today, with $1K. Only your first run counts.'):'Random charts until you get margin called. Cash out to score.';
+  $('modeHint').textContent=m==='daily'?(playedToday()?"You've played today. Replays are practice and don't count.":'Same 3 charts for everyone today, $1K. First run counts. Finish all 3 for a +5% survivor bonus.'+(streakNow()?` 🔥 ${streakNow()}-day streak.`:'')):'Random charts until you get margin called. Every 3rd round survived pays a 3% dividend. Cash out to score.';
   hints();hud(R.p[0]);loadBoard();setTimeout(tighten,0);}
 seg('segMode',v=>setMode(v?'daily':'endless'));
 seg('segStake',v=>{stake=v;eq=v;hints();hud(R.p[0]);});seg('segLev',v=>{lev=v;hints();});
@@ -362,7 +371,8 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
     else hud(p);}
   draw();requestAnimationFrame(frame);}
 
-function roundEnd(){const r=eq/roundStartEq-1;st.sq.push(r>=0?'🟩':'🟥');if(!st.seen.includes(R.pr))st.seen.push(R.pr);
+function roundEnd(){const r=eq/roundStartEq-1;st.sq.push(r>=0?'🟩':'🟥');st.rdone=(st.rdone||0)+1;if(r<=R.s.chg)st.missTape=true;
+  let div=0;if(mode==='endless'&&round%3===0&&eq>0){div=eq*.03;eq+=div;}const rb=$('rdBonus');rb.hidden=!div;if(div){rb.innerHTML='';const b=document.createElement('b'),sp=document.createElement('span');b.textContent=`SURVIVAL DIVIDEND +${money(div)}`;sp.textContent=`Every 3rd round you survive pays 3% of your account. Berkshire doesn't pay dividends. This game does.`;rb.append(b,sp);}if(!st.seen.includes(R.pr))st.seen.push(R.pr);
   if(eq<feeFor(eq)*2.5){end('broke');return;}
   hideCoach();$('rdLbl').textContent=`Round ${round} result · ${R.nm}`;const el=$('rdPct');el.textContent=pct(r);el.className='big '+(r<0?'neg':'pos');
   $('rvName').textContent=R.nm;$('rvWhen').textContent=R.d[0]+' to '+R.d[R.d.length-1]+' · '+R.name.toLowerCase();lesson();$('rdFact').textContent=R.fact?'Context: '+R.fact:'';$('rdFact').hidden=!R.fact;
@@ -378,7 +388,11 @@ function lesson(){const S=R.s,sg=v=>(v>=0?'+':'−')+f1(v),n=R.nm,w=R.when.toLow
   else X=`${n} ended ${sg(S.chg)} over these ${R.p.length} days. Without its 3 best days it would have ended ${sg(S.ex3)}. The best days often land right next to the worst ones, so stepping out to feel safe can cost you the recovery. You were in the market ${Math.round(st.roundIn/Math.max(.01,st.roundTot)*100)}% of this round.`;
   $('lsTitle').textContent=PR[R.pr].t;$('lsText').textContent=X;}
 
-let finalEq=0,finalRet=0,how='cash';const myTitle=['',''];
+const BADGES={SURVIVOR:'Finished all 3 daily rounds',CLEAN_SHEET:'No bad calls, at least 2 good ones',IRON_HANDS:'Survived a full round at 25×',PATIENT_CAPITAL:'3 trades or fewer and still made money',BEAT_THE_TAPE:'Beat the stock itself in every round'};
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+function streakNow(){const s=ls.get('mc_streak',{n:0,day:''});const y=new Date(Date.parse(DAY)-864e5).toISOString().slice(0,10);return s.day===DAY||s.day===y?s.n:0;}
+function bumpStreak(){const s=ls.get('mc_streak',{n:0,day:''});if(s.day===DAY)return s.n;const y=new Date(Date.parse(DAY)-864e5).toISOString().slice(0,10);const n=s.day===y?s.n+1:1;ls.set('mc_streak',{n,day:DAY});return n;}
+let finalEq=0,finalRet=0,how='cash',streak=0,earned=[];const myTitle=['',''];
 function titleFor(kind){const tim=st.totAll?st.inAll/st.totAll:0,rp=Math.max(1,round),tpr=st.trades/rp;
   if(kind==='liq')return lev>=10?['LEVERAGE JUNKIE',`The pick didn't kill you, the ${lev}× did. The same trades at 2× would still be alive.`]:['WIPED OUT','One move went too far against you. Smaller size buys you time to be right.'];
   if(kind==='broke')return['DEATH BY FEES',`${st.trades} trades cost ${money(st.fees)}. Small accounts can't afford to trade often.`];
@@ -389,11 +403,11 @@ function titleFor(kind){const tim=st.totAll?st.inAll/st.totAll:0,rp=Math.max(1,r
   if(st.dd>.3)return['BAGHOLDER',`You sat through a ${f1(st.dd)} drawdown. Cutting a loser early keeps you in the game.`];
   return['PAPER HANDS','Lots of small losses on small moves. Fewer, better trades.'];}
 function setShare(beat){const url=location.href.split('#')[0].split('?')[0],sgn=(finalRet>=0?'+':'−')+f1(finalRet);let txt;
-  if(mode==='daily')txt=`Margin Call #${DAILY_N} ${st.sq.join('')}\n${sgn} at ${lev}× · ${myTitle[0]}${beat!=null?`\nBeat ${beat}% of today's players`:''}`;
+  if(mode==='daily')txt=`Margin Call #${DAILY_N} ${st.sq.join('')}${streak>1?` 🔥${streak}`:''}\n${sgn} at ${lev}× · ${myTitle[0]}${beat!=null?`\nBeat ${beat}% of today's players`:''}`;
   else txt=how==='cash'?`Cashed out ${sgn} after ${round} rounds at ${lev}× trading real Berkshire stocks. Title: ${myTitle[0]}.`
     :`Margin called in round ${round} at ${lev}× trading ${R.nm} (${R.when.toLowerCase()}). Title: ${myTitle[0]}.`;
   $('shareBtn').href='https://x.com/intent/post?text='+encodeURIComponent(txt)+'&url='+encodeURIComponent(url);}
-function end(kind){how=kind;finalEq=kind==='liq'?0:eq;finalRet=finalEq/stake-1;state='end';hideCoach();padsOff();
+function end(kind){how=kind;let bonus=0;if(mode==='daily'&&kind==='daily'&&round>=DAILY_R&&eq>0){bonus=eq*.05;eq+=bonus;}finalEq=kind==='liq'?0:eq;finalRet=finalEq/stake-1;state='end';hideCoach();padsOff();
   const rounds=(kind==='liq'||kind==='broke')?round-1:round;
   $('enTitle').textContent={liq:'MARGIN CALLED',broke:'ACCOUNT DRAINED',cash:'CASHED OUT',daily:`DAILY #${DAILY_N} DONE`}[kind];$('enTitle').className='h2 '+((kind==='cash'||kind==='daily')&&finalRet>=0?'pos':'neg');
   $('enEq').textContent=money(finalEq);
@@ -401,6 +415,19 @@ function end(kind){how=kind;finalEq=kind==='liq'?0:eq;finalRet=finalEq/stake-1;s
     :kind==='broke'?`Your account fell too low to pay the trading fee after ${round} rounds. Fees and losses did it together.`
     :kind==='daily'?(round<DAILY_R?`You cashed out after ${round} of ${DAILY_R} rounds. ${short$(stake)} at ${lev}× became ${money(finalEq)}.`:`Same 3 charts as everyone today. ${short$(stake)} at ${lev}× became ${money(finalEq)}.`)
     :`You walked away after ${round} round${round===1?'':'s'} with ${money(finalEq)} from ${short$(stake)}. Knowing when to stop is part of the game.`;
+  const eb=$('enBonus');eb.hidden=!bonus&&!(mode==='daily'&&kind==='daily'&&round<DAILY_R);eb.innerHTML='';
+  if(bonus){const b=document.createElement('b'),sp=document.createElement('span');b.textContent=`SURVIVOR BONUS +${money(bonus)}`;sp.textContent='You played all 3 charts without getting margin called. +5% to your account.';eb.append(b,sp);}
+  else if(!eb.hidden){const b=document.createElement('b'),sp=document.createElement('span');b.textContent='NO SURVIVOR BONUS';b.style.color='var(--pencil)';sp.textContent='Play all 3 rounds without a margin call to earn +5%. Cashing out early skips it.';eb.append(b,sp);}
+  earned=[];const done=st.rdone||0;
+  if(mode==='daily'&&kind==='daily'&&round>=DAILY_R)earned.push('SURVIVOR');
+  if(kind!=='liq'&&st.bad===0&&st.good>=2)earned.push('CLEAN_SHEET');
+  if(lev===25&&done>=1)earned.push('IRON_HANDS');
+  if(kind!=='liq'&&st.trades>=1&&st.trades<=3&&finalRet>0)earned.push('PATIENT_CAPITAL');
+  if(kind!=='liq'&&done>=2&&!st.missTape)earned.push('BEAT_THE_TAPE');
+  const have=ls.get('mc_badges',[]),bw=$('badges');bw.textContent='';$('badgeWrap').hidden=!earned.length;
+  earned.forEach(k=>{const d=document.createElement('span');d.className='badge';d.textContent=k.replace(/_/g,' ');d.title=BADGES[k];if(!have.includes(k)){const n=document.createElement('i');n.textContent='NEW';d.appendChild(n);}const sm=document.createElement('small');sm.textContent=BADGES[k];d.appendChild(sm);bw.appendChild(d);});
+  ls.set('mc_badges',[...new Set([...have,...earned])]);
+  if(mode==='daily'&&!playedToday())streak=bumpStreak();else streak=streakNow();
   [myTitle[0],myTitle[1]]=titleFor(kind);$('ttl').textContent=myTitle[0];$('ttlTxt').textContent=myTitle[1];
   const r=$('stRet');r.textContent=pct(finalRet);r.className=finalRet<0?'neg':'pos';
   $('stRounds').textContent=rounds;$('stCalls').textContent=`${st.good}✓ ${st.bad}✗`;$('stTrades').textContent=st.trades;$('stFees').textContent=short$(st.fees);$('stDD').textContent=f1(st.dd);
@@ -440,7 +467,7 @@ async function saveDaily(first){const note=$('subNote');note.hidden=false;
         body:JSON.stringify({day:DAY,name:handle,ret:+finalRet.toFixed(6),lev,good:st.good,bad:st.bad})});
       if(!r.ok){if(r.status===409)dup=true;else throw 0;}}
     const cnt=async q=>{const x=await fetch(`${C.SUPABASE_URL}/rest/v1/daily_scores?select=id&day=eq.${DAY}${q}`,{headers:{...hdr(),Prefer:'count=exact',Range:'0-0'}});return +((x.headers.get('content-range')||'').split('/')[1]||0);};
-    const total=await cnt(''),below=await cnt(`&ret=lt.${finalRet.toFixed(6)}`),others=dup?total:total-1,beat=others>0?Math.round(below/others*100):null;
+    const total=await cnt(''),below=await cnt(`&ret=lt.${finalRet.toFixed(6)}`),others=dup?total:total-1,beat=others>0?Math.min(100,Math.round(below/others*100)):null;
     note.textContent=dup?(beat!=null?`Practice run, only your first run today counts. This one would beat ${beat}% of today's players.`:'Practice run, only your first run today counts.')
       :(beat!=null?`Saved as @${handle}. You beat ${beat}% of today's ${total} players.`:`Saved as @${handle}. You're the first player today.`);
     setShare(dup?null:beat);loadBoard();}
