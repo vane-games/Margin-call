@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="description" content="Trade real Berkshire Hathaway stocks with leverage. A coach grades every move. Survive as long as you can.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Margin Call">
@@ -87,6 +87,7 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
 .big{font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
 .intro-copy{display:none}
 .seg.seg2{grid-template-columns:1fr 1fr}
+html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .row:has(#rdCash[hidden]){grid-template-columns:1fr}
 .titleBox{border:3px solid var(--ink);padding:8px 12px;transform:rotate(-1deg);display:flex;flex-direction:column;gap:3px;background:var(--card)}
 .titleBox b{font-family:var(--stamp);font-weight:400;font-size:24px;color:var(--red)}.titleBox p{margin:0;font-size:13px;line-height:1.4}
@@ -118,7 +119,7 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
   .p{font-size:12.5px;line-height:1.4}.p.dim{font-size:11.5px}
   .seg button{font-size:13px;padding:5px 0}.hint{font-size:10.5px;margin-top:3px}
   .go{font-size:17px;padding:8px}.ghost{font-size:12.5px;padding:7px}
-  .sub input{font-size:15px;padding:6px}
+  .sub input{font-size:16px;padding:6px}
   .big{font-size:28px}.lesson{padding:8px}.lesson h3{font-size:15px}.lesson p{font-size:12px}
   .reveal{padding:5px 8px}.reveal b{font-size:17px}.fact{font-size:11.5px}
   .stats b{font-size:15px}.stats div{padding:4px 6px}.rules{font-size:11.5px}
@@ -498,6 +499,8 @@ function draw(){if(!W)return;const P=R.p,N=P.length,padL=34,padR=62,padT=18,padB
 }
 
 try{$('handle').value=localStorage.getItem('mc_handle')||'';}catch(e){}
+try{if(/iPhone|iPod/.test(navigator.userAgent)&&window.top===window)document.documentElement.classList.add('ios-full');}catch(e){}
+$('handle').addEventListener('blur',()=>{setTimeout(()=>{window.scrollTo(0,0);fit();},50);});
 fit();setMode('daily');hud(R.p[0]);seen=[R.p[0]];loadBoard();requestAnimationFrame(frame);
 if(document.fonts)document.fonts.ready.then(fit);
 })();
