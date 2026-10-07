@@ -298,7 +298,7 @@ function intro(){round++;state='intro';side=0;t=0;pending=null;hideCoach();seen=
   hud(R.p[0]);show('ovIntro');draw();}
 $('inGo').onclick=()=>{roundStartEq=eq;Object.assign(st,{roundTrades:0,roundFees:0,roundIn:0,roundTot:0,opens:[],warnedOT:false});state='play';show(null);last=performance.now();applyInput();};
 $('rdGo').onclick=()=>{if(mode==='daily'&&round>=DAILY_R){end('daily');return;}nextRound();intro();};
-$('rdCash').onclick=()=>end('cash');
+$('rdCash').onclick=()=>end(mode==='daily'?'daily':'cash');
 $('lbBtn').onclick=()=>openBoard('ovStart');$('lbBtn2').onclick=()=>openBoard('ovEnd');$('lbRefresh').onclick=loadFull;$('lbBack').onclick=()=>{show(boardFrom);if(boardFrom==='ovStart')setTimeout(tighten,0);};
 $('againBtn').onclick=()=>{setTimeout(tighten,0);state='menu';round=0;eq=stake;nextRound();hud(R.p[0]);$('lvlLbl').textContent='Berkshire stocks';show('ovStart');loadBoard();};
 
@@ -365,7 +365,7 @@ function roundEnd(){const r=eq/roundStartEq-1;st.sq.push(r>=0?'🟩':'🟥');if(
   if(eq<feeFor(eq)*2.5){end('broke');return;}
   hideCoach();$('rdLbl').textContent=`Round ${round} result · ${R.nm}`;const el=$('rdPct');el.textContent=pct(r);el.className='big '+(r<0?'neg':'pos');
   $('rvName').textContent=R.nm;$('rvWhen').textContent=R.d[0]+' to '+R.d[R.d.length-1]+' · '+R.name.toLowerCase();lesson();$('rdFact').textContent=R.fact?'Context: '+R.fact:'';$('rdFact').hidden=!R.fact;
-  const tot=eq/stake-1;$('rdCash').hidden=mode==='daily';$('rdGo').textContent=mode==='daily'&&round>=DAILY_R?'FINAL RESULT':'NEXT ROUND';$('rdCash').textContent=`CASH OUT ${short$(eq)}`;$('rdNote').textContent=mode==='daily'?`Account ${money(eq)}, ${pct(tot)}. Round ${round} of ${DAILY_R}.`:`Account ${money(eq)}, ${pct(tot)} since you started. Cash out to lock it in for the leaderboard, or risk it on another round.`;
+  const tot=eq/stake-1;$('rdCash').hidden=mode==='daily'&&round>=DAILY_R;$('rdGo').textContent=mode==='daily'&&round>=DAILY_R?'FINAL RESULT':'NEXT ROUND';$('rdCash').textContent=`CASH OUT ${short$(eq)}`;$('rdNote').textContent=mode==='daily'?(round>=DAILY_R?`Account ${money(eq)}, ${pct(tot)}. That was the last round.`:`Account ${money(eq)}, ${pct(tot)}. Round ${round} of ${DAILY_R}. Cash out now to lock this result in for today, or risk it on the next chart.`):`Account ${money(eq)}, ${pct(tot)} since you started. Cash out to lock it in for the leaderboard, or risk it on another round.`;
   show('ovRound');}
 
 function lesson(){const S=R.s,sg=v=>(v>=0?'+':'−')+f1(v),n=R.nm,w=R.when.toLowerCase();let X;
@@ -398,7 +398,7 @@ function end(kind){how=kind;finalEq=kind==='liq'?0:eq;finalRet=finalEq/stake-1;s
   $('enEq').textContent=money(finalEq);
   $('enText').textContent=kind==='liq'?`Closed out in round ${round} trading ${R.nm} (${R.when.toLowerCase()}). At ${lev}× a ${(100/lev).toFixed(1)}% move against you is the whole position. Cash out earlier to keep a score.`
     :kind==='broke'?`Your account fell too low to pay the trading fee after ${round} rounds. Fees and losses did it together.`
-    :kind==='daily'?`Same 3 charts as everyone today. ${short$(stake)} at ${lev}× became ${money(finalEq)}.`
+    :kind==='daily'?(round<DAILY_R?`You cashed out after ${round} of ${DAILY_R} rounds. ${short$(stake)} at ${lev}× became ${money(finalEq)}.`:`Same 3 charts as everyone today. ${short$(stake)} at ${lev}× became ${money(finalEq)}.`)
     :`You walked away after ${round} round${round===1?'':'s'} with ${money(finalEq)} from ${short$(stake)}. Knowing when to stop is part of the game.`;
   [myTitle[0],myTitle[1]]=titleFor(kind);$('ttl').textContent=myTitle[0];$('ttlTxt').textContent=myTitle[1];
   const r=$('stRet');r.textContent=pct(finalRet);r.className=finalRet<0?'neg':'pos';
