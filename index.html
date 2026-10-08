@@ -84,6 +84,11 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
 .sub button{font:inherit;font-weight:700;padding:0 14px;border:0;background:var(--green);color:var(--card);cursor:pointer}
 .sub button:disabled{opacity:.5}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ov{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.stick{position:sticky;bottom:-14px;z-index:2;box-shadow:0 -10px 0 0 var(--card),3px 3px 0 var(--margin)}
+.row.stick{background:var(--card);padding:8px 0 10px;margin:0 -2px;box-shadow:0 -6px 10px -6px rgba(28,38,51,.35)}
+.row.stick > *{box-shadow:3px 3px 0 var(--margin)}
+.app.ovFull .pads{display:none}
 .big{font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
 .intro-copy{display:none}
 .seg.seg2{grid-template-columns:1fr 1fr}
@@ -233,7 +238,7 @@ html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
         <p class="fact" id="rdFact"></p>
         <p class="p hold" id="rdHold"></p>
         <a class="letter" id="rdLetter" target="_blank" rel="noopener"></a>
-        <div class="row"><button class="go" id="rdGo">NEXT ROUND</button><button class="ghost" id="rdCash">CASH OUT</button></div>
+        <div class="row stick"><button class="go" id="rdGo">NEXT ROUND</button><button class="ghost" id="rdCash">CASH OUT</button></div>
         <div class="bonus" id="rdBonus" hidden></div>
         <p class="p dim" id="rdNote"></p>
       </div>
@@ -254,7 +259,7 @@ html.ios-full .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
         <p class="p" id="subNote" hidden></p>
         <p class="p dim" id="enNext" hidden></p>
         <div class="row"><a class="ghost" id="shareBtn" target="_blank" rel="noopener">Post on X</a><button class="ghost" id="copyBtn" type="button">Copy result</button></div>
-        <button class="ghost" id="againBtn" type="button">Play again</button>
+        <button class="ghost stick" id="againBtn" type="button">Play again</button>
         <div class="row"><button class="ghost" id="lbBtn2" type="button">Full leaderboard</button><button class="ghost kitOpen" id="kitBtn2" type="button">Open your Risk Kit</button></div>
         <div class="board"><div class="lbl boardLbl">Top 10 · best cash-out</div><ol data-board></ol></div>
       </div>
@@ -338,7 +343,7 @@ function setMode(m){mode=m;$('stakeWrap').hidden=m==='daily';if(m==='daily'){sta
   hints();hud(R.p[0]);loadBoard();setTimeout(tighten,0);}
 seg('segMode',v=>setMode(v?'daily':'endless'));
 seg('segStake',v=>{stake=v;eq=v;hints();hud(R.p[0]);});seg('segLev',v=>{lev=v;hints();});
-function show(id){['ovStart','ovIntro','ovRound','ovEnd','ovBoard','ovKit'].forEach(o=>$(o).hidden=o!==id);}
+function show(id){['ovStart','ovIntro','ovRound','ovEnd','ovBoard','ovKit'].forEach(o=>$(o).hidden=o!==id);const a=document.querySelector('.app'),w=['ovRound','ovEnd','ovBoard','ovKit'].includes(id);if(a.classList.contains('ovFull')!==w){a.classList.toggle('ovFull',w);fit();}if(id&&$(id))$(id).scrollTop=0;}
 $('goBtn').onclick=()=>{const h=$('handle').value.trim().replace(/^@/,'');if(!/^[A-Za-z0-9_]{1,15}$/.test(h)){$('handleHint').innerHTML='<b>Enter your X handle to play:</b> letters, numbers and _ only, up to 15.';$('handle').focus();return;}handle=h;try{localStorage.setItem('mc_handle',h);}catch(e){}if(mode==='daily'){stake=1000;buildDaily();}eq=stake;round=0;st=fresh();st.peak=stake;$('tCalls').textContent='0✓ 0✗';nextRound();intro();};
 function intro(){round++;state='intro';side=0;t=0;pending=null;hideCoach();seen=[R.p[0]];
   $('inLvl').textContent=mode==='daily'?`Daily #${DAILY_N} · Round ${round} of ${DAILY_R}`:`Round ${round}`;$('inName').textContent='MYSTERY STOCK #'+round;$('inSub').textContent=`A Berkshire stock · ${R.p.length} trading days · name and dates revealed after the round`;$('inHint').textContent='Tip: '+TIPS[Math.floor(Math.random()*TIPS.length)];$('lvlLbl').textContent=`Round ${round} · Mystery stock`;
