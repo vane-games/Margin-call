@@ -85,7 +85,10 @@ button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:3px solid 
 .sub button:disabled{opacity:.5}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ov{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.stick{position:sticky;bottom:-14px;z-index:2;box-shadow:0 -10px 0 0 var(--card),3px 3px 0 var(--margin)}
+.stick{position:sticky;bottom:-14px;z-index:2}
+#againBtn.stick{box-shadow:0 -10px 0 0 var(--card),0 -16px 12px -8px rgba(28,38,51,.3)}
+.app.ovFull .ov{background:var(--card)}
+.app.ovFull .ov .card{padding-bottom:24px}
 .row.stick{background:var(--card);padding:8px 0 10px;margin:0 -2px;box-shadow:0 -6px 10px -6px rgba(28,38,51,.35)}
 .row.stick > *{box-shadow:3px 3px 0 var(--margin)}
 .app.ovFull .pads{display:none}
